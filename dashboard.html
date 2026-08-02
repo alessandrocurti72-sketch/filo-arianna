@@ -561,7 +561,7 @@ async function eliminaEducatore(id, nome) {
   try {
     await _getDb().collection('educatori').doc(id).delete();
     // Elimina anche gli interventi dell'educatore
-    const snap = await _getDb().collection('interventi').where('educatoreId','==',id).get({ source: 'server' });
+    const snap = await _getDb().collection('interventi').where('educatoreId','==',id).get();
     const batch = _getDb().batch();
     snap.docs.forEach(d => batch.delete(d.ref));
     await batch.commit();
@@ -606,20 +606,8 @@ function _getDb() {
   if (_db) return _db;
   if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
   _db = firebase.firestore();
-  // Disabilita TUTTA la cache locale — dashboard sempre aggiornata
-  try {
-    _db.disableNetwork().then(() => _db.enableNetwork());
-  } catch(e) {}
+  _db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
   return _db;
-}
-
-// Funzione helper per query sempre fresche
-async function dbGet(ref) {
-  try {
-    return await ref.get({ source: 'server' });
-  } catch(e) {
-    return await ref.get({ source: 'server' });
-  }
 }
 
 const col = name => _getDb().collection(name);
@@ -627,7 +615,7 @@ const col = name => _getDb().collection(name);
 // ── EDUCATORI ──
 
 async function syncGetEducatori() {
-  const snap = await col('educatori').get({ source: 'server' });
+  const snap = await col('educatori').get();
   const risultati = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   return risultati.sort((a, b) => a.nome.localeCompare(b.nome));
 }
@@ -649,7 +637,7 @@ async function syncDeleteEducatore(id) {
 async function syncGetInterventi(educatoreId) {
   const snap = await col('interventi')
     .where('educatoreId', '==', educatoreId)
-    .get({ source: 'server' });
+    .get();
   const risultati = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   return risultati.sort((a, b) => a.minore.localeCompare(b.minore));
 }
@@ -687,7 +675,7 @@ async function syncGetTimbratureByMese(educatoreId, mese) {
   const snap = await col('timbrature')
     .where('educatoreId', '==', educatoreId)
     .where('mese', '==', mese)
-    .get({ source: 'server' });
+    .get();
   const risultati = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   return risultati.sort((a, b) => a.data.localeCompare(b.data));
 }
@@ -697,7 +685,7 @@ async function syncGetTimbratureAperte(educatoreId) {
   const snap = await col('timbrature')
     .where('educatoreId', '==', educatoreId)
     .where('data', '==', oggi)
-    .get({ source: 'server' });
+    .get();
   return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(t => !t.uscita);
 }
 
@@ -706,22 +694,22 @@ async function syncGetTimbratureAperte(educatoreId) {
 async function syncGetTutteTimbrature(mese) {
   let snap;
   if (mese) {
-    snap = await col('timbrature').where('mese', '==', mese).get({ source: 'server' });
+    snap = await col('timbrature').where('mese', '==', mese).get();
   } else {
-    snap = await col('timbrature').get({ source: 'server' });
+    snap = await col('timbrature').get();
   }
   const risultati = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   return risultati.sort((a, b) => b.data.localeCompare(a.data));
 }
 
 async function syncGetTuttiEducatori() {
-  const snap = await col('educatori').get({ source: 'server' });
+  const snap = await col('educatori').get();
   const risultati = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   return risultati.sort((a, b) => a.nome.localeCompare(b.nome));
 }
 
 async function syncGetTuttiInterventi() {
-  const snap = await col('interventi').get({ source: 'server' });
+  const snap = await col('interventi').get();
   const risultati = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   return risultati.sort((a, b) => a.minore.localeCompare(b.minore));
 }
@@ -756,16 +744,16 @@ async function syncGetValidazioni(educatoreId, mese) {
   const snap = await col('validazioni')
     .where('educatoreId', '==', educatoreId)
     .where('mese', '==', mese)
-    .get({ source: 'server' });
+    .get();
   return snap.docs.map(d => ({ id: d.id, token: d.id, ...d.data() }));
 }
 
 async function syncGetTutteValidazioni(mese) {
   let snap;
   if (mese) {
-    snap = await col('validazioni').where('mese', '==', mese).get({ source: 'server' });
+    snap = await col('validazioni').where('mese', '==', mese).get();
   } else {
-    snap = await col('validazioni').get({ source: 'server' });
+    snap = await col('validazioni').get();
   }
   return snap.docs.map(d => ({ id: d.id, token: d.id, ...d.data() }));
 }
@@ -780,7 +768,7 @@ async function syncSalvaValidazione(token, firma, timbrature) {
 }
 
 async function syncGetTokenValidazione(token) {
-  const doc = await col('validazioni').doc(token).get({ source: 'server' });
+  const doc = await col('validazioni').doc(token).get();
   if (!doc.exists) return null;
   return { id: doc.id, token: doc.id, ...doc.data() };
 }
@@ -793,7 +781,7 @@ async function syncGetNotificheCollega(educatoreId, minoreId) {
   const snap = await col('notifiche_collega')
     .where('destinatarioId', '==', educatoreId)
     .where('minoreId', '==', minoreId)
-    .get({ source: 'server' });
+    .get();
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
@@ -804,7 +792,7 @@ async function syncSegnaNotificaCollegaLetta(notificaId) {
 // ── MINORI ──
 
 async function syncGetMinori() {
-  const snap = await col('minori').get({ source: 'server' });
+  const snap = await col('minori').get();
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
@@ -828,7 +816,7 @@ async function syncUpdateMinore(id, data) {
 async function syncGetNoteDiario(minoreId) {
   const snap = await col('diario')
     .where('minoreId', '==', minoreId)
-    .get({ source: 'server' });
+    .get();
   const risultati = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   return risultati.sort((a, b) => {
     const ta = a.timestamp ? a.timestamp.seconds : 0;
@@ -848,7 +836,7 @@ async function syncAddCommento(notaId, commento) {
 }
 
 async function syncSegnaVisto(notaId, utente) {
-  const doc = await col('diario').doc(notaId).get({ source: 'server' });
+  const doc = await col('diario').doc(notaId).get();
   if (!doc.exists) return;
   const vistoDA = doc.data().vistoDA || [];
   if (!vistoDA.some(v => v.id === utente.id)) {
@@ -861,12 +849,12 @@ async function syncSegnaVisto(notaId, utente) {
 async function syncGetUrgenze() {
   const snap = await col('diario')
     .where('urgente', '==', true)
-    .get({ source: 'server' });
+    .get();
   const urgenteSnap = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
   const snapDom = await col('diario')
     .where('domandaCoord', '>', '')
-    .get({ source: 'server' });
+    .get();
   const domande = snapDom.docs.map(d => ({ id: d.id, ...d.data() }));
 
   // Unisci e de-duplica
@@ -1132,7 +1120,7 @@ async function scaricaTuttiPDF() {
     const snap = await _getDb().collection('validazioni')
       .where('mese', '==', mese)
       .where('stato', '==', 'validato')
-      .get({ source: 'server' });
+      .get();
 
     const validazioni = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (!validazioni.length) { toast('Nessun foglio validato per questo mese'); return; }
@@ -1171,7 +1159,7 @@ async function scaricaTuttiPDF() {
       const tSnap = await _getDb().collection('timbrature')
         .where('educatoreId', '==', v.educatoreId)
         .where('mese', '==', mese)
-        .get({ source: 'server' });
+        .get();
       const timb = tSnap.docs
         .map(d => ({ id: d.id, ...d.data() }))
         .filter(t => t.minore === v.minore)
@@ -1284,7 +1272,7 @@ async function gestisciRichiesta(id, esito) {
   const noteCoordinatore = noteEl ? noteEl.value.trim() : '';
   try {
     // Carica la richiesta
-    const doc = await _getDb().collection('richieste_assenza').doc(id).get({ source: 'server' });
+    const doc = await _getDb().collection('richieste_assenza').doc(id).get();
     if (!doc.exists) { alert('Richiesta non trovata'); return; }
     const r = { id: doc.id, ...doc.data() };
 
@@ -1298,7 +1286,7 @@ async function gestisciRichiesta(id, esito) {
     // Se approvata: crea automaticamente voci Ore+ per i giorni nel periodo
     if (esito === 'approvata') {
       const tipoOa = r.tipo === 'ferie' ? 'ferie' : r.tipo === 'permesso' ? 'permesso' : 'altro';
-      const orDoc = await _getDb().collection('orari_settimanali').doc(r.educatoreId).get({ source: 'server' });
+      const orDoc = await _getDb().collection('orari_settimanali').doc(r.educatoreId).get();
       const orario = orDoc.exists ? orDoc.data() : {};
       const giorni = ['domenica','lunedi','martedi','mercoledi','giovedi','venerdi','sabato'];
 
@@ -1358,11 +1346,11 @@ async function scaricaCalendarioRichieste() {
   const logoHtml = (typeof LOGO_B64 !== 'undefined') ? '<img src="' + LOGO_B64 + '" style="height:40px;margin-right:14px;">' : '';
 
   try {
-    const snapEdu = await _getDb().collection('educatori').get({ source: 'server' });
+    const snapEdu = await _getDb().collection('educatori').get();
     const educatori = snapEdu.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a,b) => a.nome.localeCompare(b.nome));
 
-    const snapRich = await _getDb().collection('richieste_assenza').get({ source: 'server' });
+    const snapRich = await _getDb().collection('richieste_assenza').get();
     const richieste = snapRich.docs.map(d => ({ id: d.id, ...d.data() }));
 
     // Mappa educatoreId -> { gg -> {tipo, tipoLabel, stato} }
@@ -1477,11 +1465,11 @@ async function eliminaRichiestaDash(id) {
 
 async function openOrari() {
   try {
-    const snap = await _getDb().collection('educatori').get({ source: 'server' });
+    const snap = await _getDb().collection('educatori').get();
     const educatori = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => a.nome.localeCompare(b.nome));
     let orariMap = {};
     try {
-      const orariSnap = await _getDb().collection('orari_settimanali').get({ source: 'server' });
+      const orariSnap = await _getDb().collection('orari_settimanali').get();
       orariSnap.docs.forEach(d => { orariMap[d.id] = d.data(); });
     } catch(e) { /* collezione non ancora esistente */ }
 
@@ -1526,7 +1514,7 @@ async function apriModalOrario(eduId, eduNome) {
     // Carica orario esistente — ignora errore se collezione non esiste
     let o = {};
     try {
-      const doc = await _getDb().collection('orari_settimanali').doc(eduId).get({ source: 'server' });
+      const doc = await _getDb().collection('orari_settimanali').doc(eduId).get();
       if (doc.exists) o = doc.data();
     } catch(e) { /* prima volta, collezione non ancora esistente */ }
     ['lunedi','martedi','mercoledi','giovedi','venerdi','sabato'].forEach(g => {
@@ -1623,7 +1611,7 @@ function apriAggiungiOraAgg() {
     '<div style="display:flex;gap:8px;"><button onclick="document.getElementById(\'modal-add-oa\').remove()" style="flex:1;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0f4f8;cursor:pointer;">Annulla</button><button onclick="salvaOraAggDash(\'' + mese + '\')" style="flex:2;padding:10px;border:none;border-radius:8px;background:#1a3a5c;color:white;font-weight:700;cursor:pointer;">+ Aggiungi</button></div>' +
   '</div>';
   document.body.appendChild(m);
-  _getDb().collection('educatori').get({ source: 'server' }).then(snap => {
+  _getDb().collection('educatori').get().then(snap => {
     document.getElementById('oa-d-edu').innerHTML = '<option value="">— Seleziona —</option>' +
       snap.docs.sort((a,b) => a.data().nome.localeCompare(b.data().nome)).map(d => '<option value="' + d.id + '">' + d.data().nome + '</option>').join('');
   });
@@ -1649,13 +1637,13 @@ async function salvaOraAggDash(mese) {
     if (entrata && uscita) ore = calcolaOre(entrata, uscita) || ore;
   }
   if (!ore) {
-    const orDoc = await _getDb().collection('orari_settimanali').doc(eduId).get({ source: 'server' });
+    const orDoc = await _getDb().collection('orari_settimanali').doc(eduId).get();
     if (orDoc.exists) {
       const g = ['domenica','lunedi','martedi','mercoledi','giovedi','venerdi','sabato'][new Date(data + 'T12:00:00').getDay()];
       ore = parseFloat(orDoc.data()[g] || 0);
     }
   }
-  const eduSnap = await _getDb().collection('educatori').doc(eduId).get({ source: 'server' });
+  const eduSnap = await _getDb().collection('educatori').doc(eduId).get();
   const eduNome = eduSnap.exists ? eduSnap.data().nome : '';
   try {
     await _getDb().collection('ore_aggiuntive').add({ educatoreId: eduId, educatoreNome: eduNome, data, mese, categoria, ore, entrata, uscita, note, stato: 'validato', validatoAt: firebase.firestore.FieldValue.serverTimestamp(), validatoDa: 'coordinatore', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
@@ -1670,7 +1658,7 @@ async function scaricaFoglioOreAgg() {
   const [anno, mm] = mese.split('-');
   const nomeMese = nomiMesi()[parseInt(mm)];
   const logoHtml = (typeof LOGO_B64 !== 'undefined') ? '<img src="' + LOGO_B64 + '" style="height:44px;margin-right:14px;">' : '';
-  const snap = await _getDb().collection('ore_aggiuntive').where('mese', '==', mese).where('stato', '==', 'validato').get({ source: 'server' });
+  const snap = await _getDb().collection('ore_aggiuntive').where('mese', '==', mese).where('stato', '==', 'validato').get();
   const voci = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => a.educatoreNome.localeCompare(b.educatoreNome) || a.data.localeCompare(b.data));
   if (!voci.length) { toast('Nessuna voce validata per questo mese'); return; }
   const perEdu = {};
@@ -1723,7 +1711,7 @@ async function caricaArchivio() {
   try {
     const snap = await _getDb().collection('validazioni')
       .where('archiviato', '==', true)
-      .get({ source: 'server' });
+      .get();
     const archiviati = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (b.validatoAt?.seconds||0) - (a.validatoAt?.seconds||0));
     if (!archiviati.length) {
@@ -1770,7 +1758,7 @@ async function eliminaArchivio(id) {
 
 async function apriValidazioneDomiciliare(token) {
   try {
-    const doc = await _getDb().collection('validazioni').doc(token).get({ source: 'server' });
+    const doc = await _getDb().collection('validazioni').doc(token).get();
     if (!doc.exists) { alert('Foglio non trovato'); return; }
     const v = { id: doc.id, ...doc.data() };
 
@@ -1852,7 +1840,7 @@ function nomeFileValidato(v) {
 
 async function scaricaPDF(token) {
   try {
-    const doc = await _getDb().collection('validazioni').doc(token).get({ source: 'server' });
+    const doc = await _getDb().collection('validazioni').doc(token).get();
     if (!doc.exists) { alert('Validazione non trovata'); return; }
     const v = { id: doc.id, ...doc.data() };
 
@@ -1860,7 +1848,7 @@ async function scaricaPDF(token) {
     const snap = await _getDb().collection('timbrature')
       .where('educatoreId', '==', v.educatoreId)
       .where('mese', '==', v.mese)
-      .get({ source: 'server' });
+      .get();
     const timb = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .filter(t => t.minore === v.minore)
@@ -2049,7 +2037,7 @@ let modificaId = null;
 
 async function apriModificaTimbratura(id) {
   try {
-    const doc = await _getDb().collection('timbrature').doc(id).get({ source: 'server' });
+    const doc = await _getDb().collection('timbrature').doc(id).get();
     if (!doc.exists) { alert('Timbratura non trovata'); return; }
     const t = { id: doc.id, ...doc.data() };
     modificaId = id;
