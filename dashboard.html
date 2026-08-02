@@ -606,8 +606,8 @@ function _getDb() {
   if (_db) return _db;
   if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
   _db = firebase.firestore();
-  // Dashboard: nessuna persistenza offline per evitare cache stale
-  _db.settings({ cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED });
+  // Nessuna cache — ogni query va direttamente al server
+  _db.settings({ cacheSizeBytes: 0 });
   return _db;
 }
 
@@ -1347,7 +1347,7 @@ async function scaricaCalendarioRichieste() {
   const logoHtml = (typeof LOGO_B64 !== 'undefined') ? '<img src="' + LOGO_B64 + '" style="height:40px;margin-right:14px;">' : '';
 
   try {
-    const snapEdu = await _getDb().collection('educatori').get();
+    const snapEdu = await _getDb().collection('educatori').get({ source: 'server' });
     const educatori = snapEdu.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a,b) => a.nome.localeCompare(b.nome));
 
@@ -1466,11 +1466,11 @@ async function eliminaRichiestaDash(id) {
 
 async function openOrari() {
   try {
-    const snap = await _getDb().collection('educatori').get();
+    const snap = await _getDb().collection('educatori').get({ source: 'server' });
     const educatori = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => a.nome.localeCompare(b.nome));
     let orariMap = {};
     try {
-      const orariSnap = await _getDb().collection('orari_settimanali').get();
+      const orariSnap = await _getDb().collection('orari_settimanali').get({ source: 'server' });
       orariSnap.docs.forEach(d => { orariMap[d.id] = d.data(); });
     } catch(e) { /* collezione non ancora esistente */ }
 
@@ -1612,7 +1612,7 @@ function apriAggiungiOraAgg() {
     '<div style="display:flex;gap:8px;"><button onclick="document.getElementById(\'modal-add-oa\').remove()" style="flex:1;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0f4f8;cursor:pointer;">Annulla</button><button onclick="salvaOraAggDash(\'' + mese + '\')" style="flex:2;padding:10px;border:none;border-radius:8px;background:#1a3a5c;color:white;font-weight:700;cursor:pointer;">+ Aggiungi</button></div>' +
   '</div>';
   document.body.appendChild(m);
-  _getDb().collection('educatori').get().then(snap => {
+  _getDb().collection('educatori').get({ source: 'server' }).then(snap => {
     document.getElementById('oa-d-edu').innerHTML = '<option value="">— Seleziona —</option>' +
       snap.docs.sort((a,b) => a.data().nome.localeCompare(b.data().nome)).map(d => '<option value="' + d.id + '">' + d.data().nome + '</option>').join('');
   });
