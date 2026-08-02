@@ -1,10 +1,10 @@
-<!-- build:999999999 -->
+<!-- build:1785654688 -->
 <!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#1a3a5c" data-build="1785670347">
+<meta name="theme-color" content="#1a3a5c" data-build="1785673797">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Filo Dashboard">
@@ -937,7 +937,13 @@ function logoutCoord() {
 
 async function initDash() {
   const oggi = meseISO();
-  document.getElementById('f-mese').value = oggi;
+  const meseEl = document.getElementById('f-mese');
+  // Forza il valore e verifica che sia stato impostato correttamente
+  meseEl.value = oggi;
+  // Se il browser non ha accettato il valore, riprova
+  if (!meseEl.value) meseEl.value = oggi;
+  // Aggiungi listener per input oltre a onchange
+  meseEl.addEventListener('input', function() { aggiornaDash(); });
   await popolaFiltri();
   await aggiornaDash();
 }
