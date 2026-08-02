@@ -1,0 +1,2265 @@
+<!-- build:1785654688 -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a3a5c" data-build="1785673797">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Filo Dashboard">
+<link rel="manifest" href="manifest-dashboard.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Dashboard Coordinatore – Il Filo di Arianna</title>
+<style>
+:root {
+  --bg: #f0f4f8; --surface: #fff; --primary: #1a3a5c;
+  --accent: #e07b10; --success: #1a7040; --danger: #b52b2b;
+  --text: #111827; --muted: #6b7280; --border: #e2e8f0;
+  --r: 10px; --rs: 6px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+
+/* login */
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--primary); }
+.login-box { background: #fff; border-radius: var(--r); padding: 32px; width: 320px; }
+.login-box h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.login-box p { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.login-box input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--rs); font-size: 14px; margin-bottom: 10px; }
+.login-box input:focus { outline: 2px solid var(--primary); border-color: transparent; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: var(--rs); font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: opacity .15s; }
+.btn:hover { opacity: .88; }
+.btn-pri { background: var(--primary); color: #fff; }
+.btn-sec { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+.btn-acc { background: var(--accent); color: #fff; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-blk { width: 100%; justify-content: center; }
+
+/* layout */
+.dash { display: none; }
+.dash.on { display: block; }
+.topbar { background: var(--primary); color: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+.topbar-logo { font-size: 14px; font-weight: 700; }
+.topbar-logo span { font-size: 11px; font-weight: 400; opacity: .7; display: block; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.main { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+@media (max-width: 600px) {
+  .topbar { flex-direction: column; gap: 10px; align-items: flex-start; padding: 12px 14px; }
+  .topbar-right { width: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+  .btn-sm { flex: 1; justify-content: center; font-size: 12px; padding: 8px 10px; }
+  .main { padding: 12px; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .filtri { flex-direction: column; }
+  .filtri input, .filtri select { width: 100%; }
+  .edu-grid { grid-template-columns: 1fr 1fr; }
+  table { font-size: 12px; min-width: 500px; }
+  thead th { padding: 8px 8px; font-size: 10px; }
+  td { padding: 8px 8px; }
+  .td-note { max-width: 100px; }
+  .login-wrap { padding: 20px; }
+  .login-box { padding: 20px; }
+}
+
+/* stat cards */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.stat { background: var(--surface); border-radius: var(--r); padding: 16px; border: 1px solid var(--border); }
+.stat-l { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 6px; }
+.stat-v { font-size: 26px; font-weight: 700; color: var(--primary); }
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* filtri */
+.filtri { background: var(--surface); border-radius: var(--r); padding: 14px 16px; border: 1px solid var(--border); margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.filtri label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); display: block; margin-bottom: 4px; }
+.filtri input, .filtri select { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--rs); font-size: 13px; font-family: inherit; background: #fff; color: var(--text); }
+.filtri input:focus, .filtri select:focus { outline: 2px solid var(--primary); }
+
+/* tabella */
+.tbl-wrap { background: var(--surface); border-radius: var(--r); border: 1px solid var(--border); overflow: hidden; margin-bottom: 16px; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
+thead th { background: var(--primary); color: #fff; padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--bg); }
+td { padding: 10px 14px; vertical-align: middle; }
+.edu-chip { display: inline-flex; align-items: center; gap: 6px; }
+.av { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.pill-ok { background: #d1fae5; color: #065f46; }
+.pill-open { background: #fef3c7; color: #92400e; }
+.td-ore { font-weight: 700; color: var(--primary); }
+.td-gps { font-size: 11px; color: var(--muted); font-family: monospace; }
+.td-note { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; }
+
+/* edu riepilogo */
+.edu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.edu-card { background: var(--surface); border-radius: var(--r); padding: 14px; border: 1px solid var(--border); }
+.edu-card-nome { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+.edu-card-ore { font-size: 22px; font-weight: 700; color: var(--primary); margin: 6px 0; }
+.edu-card-det { font-size: 11px; color: var(--muted); }
+
+/* section header */
+.sh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.sh-t { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+
+/* empty */
+.empty { padding: 40px; text-align: center; color: var(--muted); font-size: 14px; }
+
+/* toast */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(16px); background: #1a1a2e; color: #fff; padding: 9px 18px; border-radius: 30px; font-size: 12px; opacity: 0; transition: opacity .25s, transform .25s; z-index: 999; pointer-events: none; }
+.toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN COORDINATORE -->
+<div id="login-coord" class="login-wrap">
+  <div class="login-box">
+    <h1>Il Filo di Arianna</h1>
+    <p>Area coordinatore – accesso riservato</p>
+    <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;display:block;margin-bottom:4px;">Password</label>
+    <input type="password" id="coord-pwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginCoord()">
+    <p id="pwd-err" style="color:#b52b2b;font-size:12px;margin-bottom:8px;display:none;">Password errata.</p>
+    <button class="btn btn-pri btn-blk" onclick="loginCoord()">Accedi</button>
+    <p style="font-size:11px;color:#9ca3af;margin-top:12px;text-align:center;">Password di default: <strong>filo2024</strong><br>Cambiala in settings_coord.js</p>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="dash">
+  <div class="topbar">
+    <div class="topbar-logo" style="display:flex;align-items:center;gap:10px;">
+      <img src="icons/icon-192.png" alt="logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:white;">
+      <div>Il Filo di Arianna — Dashboard coordinatore <span>v2.8.3 — 02/08/2026</span></div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-acc btn-sm" onclick="esportaTutto()">↓ Esporta tutto .xlsx</button>
+      <button class="btn btn-acc btn-sm" onclick="esportaZipSingoli()" style="background:#534AB7;">↓ File singoli .zip</button>
+      <button class="btn btn-acc btn-sm" onclick="esportaRiepilogoMensile()" style="background:#1a7040;">↓ Riepilogo mensile</button>
+      <button class="btn btn-acc btn-sm" onclick="scaricaTuttiPDF()" style="background:#7b3f00;">↓ PDF validati</button>
+      <button class="btn btn-sec btn-sm" onclick="openGestione()">👥 Gestione educatori</button>
+      <button class="btn btn-sec btn-sm" onclick="openOrari()">⏱ Orari settimanali</button>
+      <button class="btn btn-sec btn-sm" onclick="openArchivio()">📦 Archivio</button>
+      <button class="btn btn-sec btn-sm" onclick="logoutCoord()">Esci</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- Stat cards -->
+    <div class="stats">
+      <div class="stat"><div class="stat-l">Educatori attivi</div><div class="stat-v" id="st-edu">—</div></div>
+      <div class="stat"><div class="stat-l">Timbrature mese</div><div class="stat-v" id="st-timb">—</div></div>
+      <div class="stat"><div class="stat-l">Ore totali mese</div><div class="stat-v" id="st-ore">—</div></div>
+      <div class="stat"><div class="stat-l">Interventi aperti oggi</div><div class="stat-v" id="st-open">—</div></div>
+    </div>
+
+    <!-- Filtri -->
+    <div class="filtri">
+      <div>
+        <label>Mese</label>
+        <input type="month" id="f-mese" onchange="aggiornaDash()">
+      </div>
+      <div>
+        <label>Educatore</label>
+        <select id="f-edu" onchange="aggiornaDash()"><option value="">Tutti</option></select>
+      </div>
+      <div>
+        <label>Minore</label>
+        <select id="f-minore" onchange="aggiornaDash()"><option value="">Tutti</option></select>
+      </div>
+      <div>
+        <button class="btn btn-sec" onclick="resetFiltri()">Reset filtri</button>
+      </div>
+    </div>
+
+    <!-- Riepilogo per educatore -->
+    <div class="sh"><span class="sh-t">Riepilogo per educatore</span></div>
+    <div class="edu-grid" id="edu-grid"></div>
+
+    <!-- Validazioni QR -->
+    <div class="sh" style="margin-top:8px;">
+      <span class="sh-t">Fogli validati dai referenti</span>
+      <span id="conta-validazioni" style="font-size:12px;color:#6b7280;"></span>
+    </div>
+    <div class="tbl-wrap" style="margin-bottom:16px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Educatore</th>
+            <th>Minore</th>
+            <th>Scuola</th>
+            <th>Mese</th>
+            <th>Stato</th>
+            <th>Validato il</th>
+            <th>PDF</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="validazioni-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Richieste Assenza -->
+    <div class="sh" style="margin-top:8px;">
+      <span class="sh-t">Richieste di assenza</span>
+      <span id="conta-richieste" style="font-size:12px;color:#6b7280;"></span>
+    </div>
+    <div class="tbl-wrap" style="margin-bottom:8px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Educatore</th>
+            <th>Tipo</th>
+            <th>Dal</th>
+            <th>Al</th>
+            <th>Note</th>
+            <th>Stato</th>
+            <th>Azioni</th>
+          </tr>
+        </thead>
+        <tbody id="richieste-body"></tbody>
+      </table>
+    </div>
+    <div style="margin-bottom:16px;">
+      <button onclick="scaricaCalendarioRichieste()" style="padding:8px 14px;border:none;border-radius:6px;background:#1a7040;color:white;font-size:12px;cursor:pointer;">↓ Calendario mensile richieste</button>
+    </div>
+
+    <!-- Ore Aggiuntive -->
+    <div class="sh" style="margin-top:8px;">
+      <span class="sh-t">Ore aggiuntive</span>
+      <span id="conta-ore-agg" style="font-size:12px;color:#6b7280;"></span>
+    </div>
+    <div class="tbl-wrap" style="margin-bottom:16px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Educatore</th>
+            <th>Data</th>
+            <th>Categoria</th>
+            <th>Ore</th>
+            <th>Note</th>
+            <th>Stato</th>
+            <th>Azioni</th>
+          </tr>
+        </thead>
+        <tbody id="ore-agg-body"></tbody>
+      </table>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button onclick="apriAggiungiOraAgg()" style="padding:8px 14px;border:none;border-radius:6px;background:#1a3a5c;color:white;font-size:12px;cursor:pointer;">+ Aggiungi voce</button>
+      <button onclick="scaricaFoglioOreAgg()" style="padding:8px 14px;border:none;border-radius:6px;background:#6d28d9;color:white;font-size:12px;cursor:pointer;">↓ Foglio ore aggiuntive</button>
+    </div>
+
+    <!-- Tabella dettaglio -->
+    <div class="sh">
+      <span class="sh-t">Dettaglio timbrature</span>
+      <span id="conta-risultati" style="font-size:12px;color:#6b7280;"></span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Educatore</th>
+            <th>Data</th>
+            <th>Minore</th>
+            <th>Scuola</th>
+            <th>Entrata</th>
+            <th>Uscita</th>
+            <th>Ore</th>
+            <th>Note</th>
+            <th>GPS</th>
+            <th>Azioni</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="modal-gestione" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:24px;width:90%;max-width:520px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1a3a5c;">Gestione educatori</h2>
+      <button onclick="closeGestione()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;">×</button>
+    </div>
+
+    <!-- Form: aggiungi educatore -->
+    <div style="background:#e8f0f8;border-radius:8px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:#1a3a5c;margin-bottom:10px;">+ Nuovo educatore</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <input type="text" id="new-edu-nome-coord" placeholder="Nome completo (es. Mario Rossi)"
+          style="padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="new-edu-pin-coord" placeholder="PIN 4 cifre" maxlength="4" inputmode="numeric"
+            style="flex:1;padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit;letter-spacing:4px;text-align:center;">
+          <button onclick="creaEducatoreCoord()"
+            style="flex:2;padding:9px 14px;border:none;border-radius:6px;background:#1a3a5c;color:#fff;cursor:pointer;font-size:13px;font-weight:700;">
+            Crea profilo
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista educatori -->
+    <div id="gestione-lista"></div>
+
+    <!-- Form: aggiungi intervento -->
+    <div id="form-aggiungi-intervento" style="display:none;margin-top:16px;padding:14px;background:#e8f5ee;border-radius:8px;">
+      <div style="font-size:13px;font-weight:700;color:#1a7040;margin-bottom:10px;">
+        + Nuovo intervento per <span id="int-edu-nome"></span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <input type="text" id="int-minore" placeholder="Nome minore (es. Luca B.)"
+          style="padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit;">
+        <input type="text" id="int-scuola" placeholder="Scuola / sede (es. ITIS Galilei)"
+          style="padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit;">
+        <input type="text" id="int-comune" placeholder="Comune (es. Varese)"
+          style="padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit;">
+        <div style="display:flex;gap:8px;">
+          <button onclick="cancellaIntervento()"
+            style="flex:1;padding:9px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;">
+            Annulla
+          </button>
+          <button onclick="salvaIntervento()"
+            style="flex:2;padding:9px;border:none;border-radius:6px;background:#1a7040;color:#fff;cursor:pointer;font-size:13px;font-weight:700;">
+            Aggiungi intervento
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form: reset PIN -->
+    <div id="modal-reset-pin" style="display:none;margin-top:16px;padding:16px;background:#f0f4f8;border-radius:8px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:#1a3a5c;">Nuovo PIN per <span id="reset-edu-nome"></span></div>
+      <input type="password" inputmode="numeric" maxlength="4" id="nuovo-pin" placeholder="••••"
+        style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:20px;letter-spacing:8px;text-align:center;margin-bottom:10px;">
+      <div style="display:flex;gap:8px;">
+        <button onclick="cancellaReset()" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;">Annulla</button>
+        <button onclick="confermaReset()" style="flex:1;padding:10px;border:none;border-radius:6px;background:#1a3a5c;color:#fff;cursor:pointer;font-size:13px;font-weight:700;">Salva PIN</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal firma coordinatore domiciliare -->
+<div id="modal-firma-coord" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;width:92%;max-width:560px;max-height:90vh;overflow-y:auto;padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#1a3a5c;" id="firma-coord-titolo"></div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px;" id="firma-coord-edu"></div>
+      </div>
+      <button onclick="document.getElementById('modal-firma-coord').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;">×</button>
+    </div>
+    <input type="hidden" id="firma-coord-token">
+    <iframe id="firma-coord-iframe" style="width:100%;height:340px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:16px;"></iframe>
+    <div style="background:#f0f4f8;border-radius:8px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">La firma del coordinatore verrà apposta automaticamente:</div>
+      <div style="background:white;border-radius:6px;padding:10px;display:inline-block;border:1px solid #e2e8f0;">
+        <img id="firma-coord-preview" src="" style="height:50px;display:block;">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="document.getElementById('modal-firma-coord').style.display='none'" style="flex:1;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#f0f4f8;cursor:pointer;font-size:14px;">Annulla</button>
+      <button id="btn-firma-coord" onclick="confermaFirmaCoord()" style="flex:2;padding:12px;border:none;border-radius:8px;background:#1a3a5c;color:#fff;cursor:pointer;font-size:14px;font-weight:700;">✓ Valida con firma</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Orario Settimanale Educatore -->
+<div id="modal-orario" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:24px;width:92%;max-width:480px;max-height:85vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1a3a5c;">⏱ Orario settimanale — <span id="orario-edu-nome"></span></h2>
+      <button onclick="document.getElementById('modal-orario').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;">×</button>
+    </div>
+    <input type="hidden" id="orario-edu-id">
+    <p style="font-size:12px;color:#6b7280;margin-bottom:14px;">Ore lavorative per giorno. Usa 0 per i giorni non lavorativi.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Lunedì</label><input type="number" id="orario-lunedi" min="0" max="12" step="0.5" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px;"></div>
+      <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Martedì</label><input type="number" id="orario-martedi" min="0" max="12" step="0.5" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px;"></div>
+      <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Mercoledì</label><input type="number" id="orario-mercoledi" min="0" max="12" step="0.5" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px;"></div>
+      <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Giovedì</label><input type="number" id="orario-giovedi" min="0" max="12" step="0.5" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px;"></div>
+      <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Venerdì</label><input type="number" id="orario-venerdi" min="0" max="12" step="0.5" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px;"></div>
+      <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Sabato</label><input type="number" id="orario-sabato" min="0" max="12" step="0.5" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px;"></div>
+    </div>
+    <div style="background:#f0f4f8;border-radius:8px;padding:10px;margin-bottom:14px;font-size:12px;color:#1a3a5c;">
+      Totale settimanale: <strong id="orario-tot-sett">0h</strong>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="document.getElementById('modal-orario').style.display='none'" style="flex:1;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#f0f4f8;cursor:pointer;">Annulla</button>
+      <button onclick="salvaOrarioSettimanale()" style="flex:2;padding:12px;border:none;border-radius:8px;background:#1a3a5c;color:#fff;cursor:pointer;font-size:14px;font-weight:700;">✓ Salva orario</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Archivio -->
+<div id="modal-archivio" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:24px;width:92%;max-width:600px;max-height:85vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1a3a5c;">📦 Archivio fogli validati</h2>
+      <button onclick="document.getElementById('modal-archivio').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;">×</button>
+    </div>
+    <p style="font-size:12px;color:#6b7280;margin-bottom:14px;">Fogli archiviati — non compaiono nella lista principale.</p>
+    <div id="archivio-lista"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast-gestione"></div>
+
+<script>
+let resetEduId = null;
+let interventoEduId = null;
+
+async function openGestione() {
+  document.getElementById('modal-gestione').style.display = 'flex';
+  document.getElementById('modal-reset-pin').style.display = 'none';
+  document.getElementById('form-aggiungi-intervento').style.display = 'none';
+  await aggiornaListaGestione();
+}
+
+function closeGestione() {
+  document.getElementById('modal-gestione').style.display = 'none';
+  resetEduId = null;
+  interventoEduId = null;
+}
+
+async function aggiornaListaGestione() {
+  const lista = document.getElementById('gestione-lista');
+  lista.innerHTML = '<p style="font-size:13px;color:#888;margin-bottom:12px;">Caricamento...</p>';
+  try {
+    const educatori = await syncGetTuttiEducatori();
+    const interventi = await syncGetTuttiInterventi();
+
+    if (!educatori.length) {
+      lista.innerHTML = '<p style="font-size:13px;color:#888;">Nessun educatore registrato.</p>';
+      return;
+    }
+    lista.innerHTML = educatori.map(e => {
+      const intEdu = interventi.filter(i => i.educatoreId === e.id);
+      const intHtml = intEdu.length
+        ? intEdu.map(i => `<div style="font-size:11px;color:#1a7040;padding:2px 0;">● ${i.minore} — ${i.scuola}</div>`).join('')
+        : '<div style="font-size:11px;color:#aaa;">Nessun intervento</div>';
+      return `
+        <div style="padding:12px 0;border-bottom:1px solid #eee;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:#1a3a5c;">${e.nome}</div>
+              <div style="font-size:11px;color:#888;margin-top:1px;">PIN: ${'•'.repeat(4)}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+              <button onclick="apriFormIntervento('${e.id}','${e.nome.replace(/'/g,"\\'")}')
+" style="padding:5px 10px;border:1px solid #1a7040;border-radius:6px;background:#fff;color:#1a7040;cursor:pointer;font-size:11px;font-weight:600;">+ Intervento</button>
+              <button onclick="avviaResetPin('${e.id}','${e.nome.replace(/'/g,"\\'")}')
+" style="padding:5px 10px;border:1px solid #1a3a5c;border-radius:6px;background:#fff;color:#1a3a5c;cursor:pointer;font-size:11px;font-weight:600;">Reset PIN</button>
+              <button onclick="eliminaEducatore('${e.id}','${e.nome.replace(/'/g,"\\'")}')
+" style="padding:5px 10px;border:1px solid #b52b2b;border-radius:6px;background:#fff;color:#b52b2b;cursor:pointer;font-size:11px;font-weight:600;">Elimina</button>
+            </div>
+          </div>
+          <div style="padding-left:8px;">${intHtml}</div>
+        </div>`;
+    }).join('');
+  } catch(err) {
+    lista.innerHTML = '<p style="font-size:13px;color:#b52b2b;">Errore: ' + err.message + '</p>';
+  }
+}
+
+async function creaEducatoreCoord() {
+  const nome = document.getElementById('new-edu-nome-coord').value.trim();
+  const pin = document.getElementById('new-edu-pin-coord').value.trim();
+  if (!nome) { alert('Inserisci il nome dell\'educatore'); return; }
+  if (pin.length !== 4 || isNaN(Number(pin))) { alert('Il PIN deve essere di 4 cifre numeriche'); return; }
+  try {
+    await _getDb().collection('educatori').add({
+      nome, pin,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: 'coordinatore'
+    });
+    document.getElementById('new-edu-nome-coord').value = '';
+    document.getElementById('new-edu-pin-coord').value = '';
+    toastGestione('Educatore creato: ' + nome + ' (PIN: ' + pin + ')');
+    await aggiornaListaGestione();
+    await popolaFiltri();
+  } catch(err) {
+    alert('Errore: ' + err.message);
+  }
+}
+
+function apriFormIntervento(eduId, eduNome) {
+  interventoEduId = eduId;
+  document.getElementById('int-edu-nome').textContent = eduNome;
+  document.getElementById('int-minore').value = '';
+  document.getElementById('int-scuola').value = '';
+  document.getElementById('int-comune').value = '';
+  document.getElementById('form-aggiungi-intervento').style.display = 'block';
+  document.getElementById('modal-reset-pin').style.display = 'none';
+  document.getElementById('int-minore').focus();
+}
+
+function cancellaIntervento() {
+  document.getElementById('form-aggiungi-intervento').style.display = 'none';
+  interventoEduId = null;
+}
+
+async function salvaIntervento() {
+  if (!interventoEduId) return;
+  const minore = document.getElementById('int-minore').value.trim();
+  const scuola = document.getElementById('int-scuola').value.trim();
+  const comune = document.getElementById('int-comune').value.trim();
+  if (!minore || !scuola) { alert('Inserisci almeno il nome del minore e la scuola'); return; }
+  try {
+    await _getDb().collection('interventi').add({
+      educatoreId: interventoEduId,
+      minore, scuola, comune,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: 'coordinatore'
+    });
+    cancellaIntervento();
+    toastGestione('Intervento aggiunto: ' + minore);
+    await aggiornaListaGestione();
+  } catch(err) {
+    alert('Errore: ' + err.message);
+  }
+}
+
+function avviaResetPin(id, nome) {
+  resetEduId = id;
+  document.getElementById('reset-edu-nome').textContent = nome;
+  document.getElementById('nuovo-pin').value = '';
+  document.getElementById('modal-reset-pin').style.display = 'block';
+  document.getElementById('form-aggiungi-intervento').style.display = 'none';
+  setTimeout(() => document.getElementById('nuovo-pin').focus(), 100);
+}
+
+function cancellaReset() {
+  resetEduId = null;
+  document.getElementById('modal-reset-pin').style.display = 'none';
+}
+
+async function confermaReset() {
+  const pin = document.getElementById('nuovo-pin').value.trim();
+  if (pin.length !== 4 || isNaN(Number(pin))) {
+    alert('Inserisci un PIN di 4 cifre numeriche');
+    return;
+  }
+  try {
+    await _getDb().collection('educatori').doc(resetEduId).update({ pin });
+    toastGestione('PIN aggiornato ✓');
+    cancellaReset();
+    await aggiornaListaGestione();
+  } catch(err) {
+    alert('Errore: ' + err.message);
+  }
+}
+
+async function eliminaEducatore(id, nome) {
+  if (!confirm('Eliminare il profilo di ' + nome + '?\nLe timbrature registrate rimarranno nello storico.')) return;
+  try {
+    await _getDb().collection('educatori').doc(id).delete();
+    // Elimina anche gli interventi dell'educatore
+    const snap = await _getDb().collection('interventi').where('educatoreId','==',id).get();
+    const batch = _getDb().batch();
+    snap.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    toastGestione('Educatore eliminato');
+    await aggiornaListaGestione();
+    await popolaFiltri();
+  } catch(err) {
+    alert('Errore: ' + err.message);
+  }
+}
+
+function toastGestione(msg) {
+  const t = document.getElementById('toast-gestione');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:9px 18px;border-radius:30px;font-size:12px;opacity:1;z-index:999;';
+  setTimeout(() => { t.style.opacity = '0'; }, 2500);
+}
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="jszip.min.js"></script>
+<script src="logo_b64.js"></script>
+<script src="firma_coord_b64.js"></script>
+<script>
+// sync.js — Layer sincronizzazione Firebase Firestore
+// Il Filo di Arianna – Presenze PWA
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC1zB3CWrz3DFD2BwgYg0MlmPnOqid3aLY",
+  authDomain: "il-filo-di-arianna---presenze.firebaseapp.com",
+  projectId: "il-filo-di-arianna---presenze",
+  storageBucket: "il-filo-di-arianna---presenze.firebasestorage.app",
+  messagingSenderId: "528980391785",
+  appId: "1:528980391785:web:5be7fedf23fa55929aaff8"
+};
+
+let _db = null;
+
+function _getDb() {
+  if (_db) return _db;
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  _db = firebase.firestore();
+  _db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+    if (err.code === 'failed-precondition') console.warn('Offline: più tab aperte');
+    if (err.code === 'unimplemented') console.warn('Offline persistence non supportata');
+  });
+  return _db;
+}
+
+const col = name => _getDb().collection(name);
+
+// ── EDUCATORI ──
+
+async function syncGetEducatori() {
+  const snap = await col('educatori').get();
+  const risultati = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return risultati.sort((a, b) => a.nome.localeCompare(b.nome));
+}
+
+async function syncAddEducatore(data) {
+  const ref = await col('educatori').add({
+    ...data,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  return { id: ref.id, ...data };
+}
+
+async function syncDeleteEducatore(id) {
+  await col('educatori').doc(id).delete();
+}
+
+// ── INTERVENTI ──
+
+async function syncGetInterventi(educatoreId) {
+  const snap = await col('interventi')
+    .where('educatoreId', '==', educatoreId)
+    .get();
+  const risultati = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return risultati.sort((a, b) => a.minore.localeCompare(b.minore));
+}
+
+async function syncAddIntervento(data) {
+  const ref = await col('interventi').add({
+    ...data,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  return { id: ref.id, ...data };
+}
+
+async function syncDeleteIntervento(id) {
+  await col('interventi').doc(id).delete();
+}
+
+// ── TIMBRATURE ──
+
+async function syncAddTimbratura(data) {
+  const ref = await col('timbrature').add({
+    ...data,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  return { id: ref.id, ...data };
+}
+
+async function syncUpdateTimbratura(id, updates) {
+  await col('timbrature').doc(id).update({
+    ...updates,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+async function syncGetTimbratureByMese(educatoreId, mese) {
+  const snap = await col('timbrature')
+    .where('educatoreId', '==', educatoreId)
+    .where('mese', '==', mese)
+    .get();
+  const risultati = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return risultati.sort((a, b) => a.data.localeCompare(b.data));
+}
+
+async function syncGetTimbratureAperte(educatoreId) {
+  const oggi = oggiISO();
+  const snap = await col('timbrature')
+    .where('educatoreId', '==', educatoreId)
+    .where('data', '==', oggi)
+    .get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(t => !t.uscita);
+}
+
+// ── COORDINATORE ──
+
+async function syncGetTutteTimbrature(mese) {
+  let snap;
+  if (mese) {
+    snap = await col('timbrature').where('mese', '==', mese).get({ source: 'server' });
+  } else {
+    snap = await col('timbrature').get({ source: 'server' });
+  }
+  const risultati = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return risultati.sort((a, b) => b.data.localeCompare(a.data));
+}
+
+async function syncGetTuttiEducatori() {
+  const snap = await col('educatori').get();
+  const risultati = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return risultati.sort((a, b) => a.nome.localeCompare(b.nome));
+}
+
+async function syncGetTuttiInterventi() {
+  const snap = await col('interventi').get();
+  const risultati = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return risultati.sort((a, b) => a.minore.localeCompare(b.minore));
+}
+
+async function syncClearAll() {
+  console.warn('syncClearAll non disponibile con Firebase');
+}
+
+// ── VALIDAZIONI QR ──
+
+async function syncCreaTokenValidazione(data) {
+  // Genera un token univoco e crea il documento su Firebase
+  const token = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  await col('validazioni').doc(token).set({
+    ...data,
+    stato: 'attesa',
+    creatoAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  return token;
+}
+
+async function syncAscollaValidazione(token, callback) {
+  // Ascolta in tempo reale il documento validazione
+  return col('validazioni').doc(token).onSnapshot(function(doc) {
+    if (doc.exists && doc.data().stato === 'validato') {
+      callback(true);
+    }
+  });
+}
+
+async function syncGetValidazioni(educatoreId, mese) {
+  const snap = await col('validazioni')
+    .where('educatoreId', '==', educatoreId)
+    .where('mese', '==', mese)
+    .get();
+  return snap.docs.map(d => ({ id: d.id, token: d.id, ...d.data() }));
+}
+
+async function syncGetTutteValidazioni(mese) {
+  let snap;
+  if (mese) {
+    snap = await col('validazioni').where('mese', '==', mese).get();
+  } else {
+    snap = await col('validazioni').get();
+  }
+  return snap.docs.map(d => ({ id: d.id, token: d.id, ...d.data() }));
+}
+
+async function syncSalvaValidazione(token, firma, timbrature) {
+  await col('validazioni').doc(token).update({
+    stato: 'validato',
+    firma: firma,
+    timbrature: timbrature,
+    validatoAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+async function syncGetTokenValidazione(token) {
+  const doc = await col('validazioni').doc(token).get();
+  if (!doc.exists) return null;
+  return { id: doc.id, token: doc.id, ...doc.data() };
+}
+
+async function syncAddNotificaUrgenzaCollega(data) {
+  await col('notifiche_collega').add(data);
+}
+
+async function syncGetNotificheCollega(educatoreId, minoreId) {
+  const snap = await col('notifiche_collega')
+    .where('destinatarioId', '==', educatoreId)
+    .where('minoreId', '==', minoreId)
+    .get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function syncSegnaNotificaCollegaLetta(notificaId) {
+  await col('notifiche_collega').doc(notificaId).update({ letto: true });
+}
+
+// ── MINORI ──
+
+async function syncGetMinori() {
+  const snap = await col('minori').get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function syncAddMinore(data) {
+  const ref = await col('minori').add({
+    ...data,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  return { id: ref.id, ...data };
+}
+
+async function syncUpdateMinore(id, data) {
+  await col('minori').doc(id).update({
+    ...data,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+// ── DIARIO NOTE ──
+
+async function syncGetNoteDiario(minoreId) {
+  const snap = await col('diario')
+    .where('minoreId', '==', minoreId)
+    .get();
+  const risultati = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return risultati.sort((a, b) => {
+    const ta = a.timestamp ? a.timestamp.seconds : 0;
+    const tb = b.timestamp ? b.timestamp.seconds : 0;
+    return tb - ta;
+  });
+}
+
+async function syncAddNotaDiario(data) {
+  const ref = await col('diario').add(data);
+  return { id: ref.id, ...data };
+}
+async function syncAddCommento(notaId, commento) {
+  await col('diario').doc(notaId).update({
+    commenti: firebase.firestore.FieldValue.arrayUnion(commento)
+  });
+}
+
+async function syncSegnaVisto(notaId, utente) {
+  const doc = await col('diario').doc(notaId).get();
+  if (!doc.exists) return;
+  const vistoDA = doc.data().vistoDA || [];
+  if (!vistoDA.some(v => v.id === utente.id)) {
+    await col('diario').doc(notaId).update({
+      vistoDA: firebase.firestore.FieldValue.arrayUnion(utente)
+    });
+  }
+}
+
+async function syncGetUrgenze() {
+  const snap = await col('diario')
+    .where('urgente', '==', true)
+    .get();
+  const urgenteSnap = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  const snapDom = await col('diario')
+    .where('domandaCoord', '>', '')
+    .get();
+  const domande = snapDom.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // Unisci e de-duplica
+  const tutti = [...urgenteSnap];
+  domande.forEach(d => {
+    if (!tutti.find(u => u.id === d.id)) tutti.push(d);
+  });
+
+  return tutti.sort((a, b) => {
+    const ta = a.timestamp ? a.timestamp.seconds : 0;
+    const tb = b.timestamp ? b.timestamp.seconds : 0;
+    return tb - ta;
+  });
+}
+
+// ── Utility condivise ──
+
+function oggiISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function meseISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function oraAttuale() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function calcolaOre(entrata, uscita) {
+  if (!entrata || !uscita) return null;
+  const [he, me] = entrata.split(':').map(Number);
+  const [hu, mu] = uscita.split(':').map(Number);
+  const diff = (hu * 60 + mu) - (he * 60 + me);
+  return diff > 0 ? (diff / 60) : null;
+}
+
+function formatData(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function iniziali(nome) {
+  return nome.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function nomiMesi() {
+  return ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+}
+
+
+
+
+</script>
+<script>
+// Password coordinatore — cambia qui (o in futuro da Firebase)
+const COORD_PWD = 'filo2024';
+
+function loginCoord() {
+  const pwd = document.getElementById('coord-pwd').value;
+  if (pwd === COORD_PWD) {
+    document.getElementById('login-coord').style.display = 'none';
+    document.getElementById('dashboard').classList.add('on');
+    initDash();
+  } else {
+    document.getElementById('pwd-err').style.display = 'block';
+  }
+}
+
+function logoutCoord() {
+  document.getElementById('login-coord').style.display = 'flex';
+  document.getElementById('dashboard').classList.remove('on');
+  document.getElementById('coord-pwd').value = '';
+}
+
+async function initDash() {
+  const oggi = meseISO();
+  const meseEl = document.getElementById('f-mese');
+  meseEl.value = oggi;
+  meseEl.addEventListener('input', function() { aggiornaDash(); });
+  // Piccolo delay per assicurarsi che il browser abbia aggiornato il DOM
+  await new Promise(resolve => setTimeout(resolve, 100));
+  // Ricontrolla e reimpostare se necessario
+  if (!meseEl.value || meseEl.value !== oggi) {
+    meseEl.value = oggi;
+  }
+  await popolaFiltri();
+  await aggiornaDash();
+}
+
+async function popolaFiltri() {
+  const educatori = await syncGetTuttiEducatori();
+  const sel = document.getElementById('f-edu');
+  sel.innerHTML = '<option value="">Tutti</option>' +
+    educatori.map(e => `<option value="${e.id}">${e.nome}</option>`).join('');
+
+  const interventi = await syncGetTuttiInterventi();
+  const minori = [...new Set(interventi.map(i => i.minore))].sort();
+  const selM = document.getElementById('f-minore');
+  selM.innerHTML = '<option value="">Tutti</option>' +
+    minori.map(m => `<option value="${m}">${m}</option>`).join('');
+}
+
+async function aggiornaDash() {
+  const mese = document.getElementById('f-mese').value;
+  const filtroEdu = document.getElementById('f-edu').value;
+  const filtroMin = document.getElementById('f-minore').value;
+
+  let timb = await syncGetTutteTimbrature(mese);
+  if (filtroEdu) timb = timb.filter(t => t.educatoreId === filtroEdu);
+  if (filtroMin) timb = timb.filter(t => t.minore === filtroMin);
+
+  const educatori = await syncGetTuttiEducatori();
+  const oggi = oggiISO();
+
+  const eduAttivi = new Set(timb.map(t => t.educatoreId)).size;
+  const totOre = timb.reduce((s, t) => s + (calcolaOre(t.entrata, t.uscita) || 0), 0);
+  const apertiOggi = timb.filter(t => t.data === oggi && !t.uscita).length;
+
+  document.getElementById('st-edu').textContent = educatori.length;
+  document.getElementById('st-timb').textContent = timb.length;
+  document.getElementById('st-ore').textContent = totOre.toFixed(2) + 'h';
+  document.getElementById('st-open').textContent = apertiOggi;
+
+  const perEdu = {};
+  timb.forEach(t => {
+    if (!perEdu[t.educatoreId]) perEdu[t.educatoreId] = { nome: t.educatoreNome || '—', ore: 0, interventi: new Set(), n: 0 };
+    perEdu[t.educatoreId].ore += calcolaOre(t.entrata, t.uscita) || 0;
+    perEdu[t.educatoreId].interventi.add(t.minore);
+    perEdu[t.educatoreId].n++;
+  });
+
+  const grid = document.getElementById('edu-grid');
+  if (!Object.keys(perEdu).length) {
+    grid.innerHTML = '<p style="font-size:13px;color:#6b7280;grid-column:1/-1;">Nessun dato per questo mese.</p>';
+  } else {
+    grid.innerHTML = Object.values(perEdu).map(e => `
+      <div class="edu-card">
+        <div class="edu-card-nome">${e.nome}</div>
+        <div class="edu-card-ore">${e.ore.toFixed(2)}h</div>
+        <div class="edu-card-det">${e.n} timbrature · ${e.interventi.size} minori</div>
+      </div>`).join('');
+  }
+
+  // Tabella timbrature
+  timb.sort((a,b) => b.data.localeCompare(a.data) || (b.entrata||'').localeCompare(a.entrata||''));
+  document.getElementById('conta-risultati').textContent = `${timb.length} righe`;
+
+  const tbody = document.getElementById('tbl-body');
+  if (!timb.length) {
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">Nessuna timbratura trovata.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = timb.map(t => {
+    const ore = calcolaOre(t.entrata, t.uscita);
+    const aperto = !t.uscita;
+    return `<tr>
+      <td><div class="edu-chip"><div class="av">${iniziali(t.educatoreNome||'?')}</div>${t.educatoreNome||'—'}</div></td>
+      <td>${formatData(t.data)}</td>
+      <td style="font-weight:600;">${t.minore}</td>
+      <td>${t.scuola}</td>
+      <td>${t.entrata || '—'}</td>
+      <td>${t.uscita ? t.uscita : '<span class="pill pill-open">aperto</span>'}</td>
+      <td class="td-ore">${ore ? ore.toFixed(2)+'h' : '—'}</td>
+      <td class="td-note" title="${t.note||''}">${t.note || ''}</td>
+      <td class="td-gps" title="${t.gpsEntrata||''}">${t.gpsEntrata ? '📍 ' + t.gpsEntrata : ''}</td>
+      <td style="white-space:nowrap;">
+        <button onclick="apriModificaTimbratura('${t.id}')" title="Modifica" style="background:none;border:1px solid #1a3a5c;border-radius:5px;padding:4px 8px;cursor:pointer;font-size:12px;color:#1a3a5c;margin-right:4px;">✏️</button>
+        <button onclick="eliminaTimbratura('${t.id}','${(t.minore||'').replace(/'/g,"\\'")}','${t.data}')" title="Elimina" style="background:none;border:1px solid #b52b2b;border-radius:5px;padding:4px 8px;cursor:pointer;font-size:12px;color:#b52b2b;">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Aggiorna sezione validazioni
+  await aggiornaValidazioni();
+  // Aggiorna ore aggiuntive e richieste
+  await aggiornaOreAgg();
+  await aggiornaRichieste();
+}
+
+async function aggiornaValidazioni() {
+  const mese = document.getElementById('f-mese').value;
+  const tbody = document.getElementById('validazioni-body');
+  try {
+    const snap = await _getDb().collection('validazioni').where('mese', '==', mese).get({ source: 'server' });
+    const validazioni = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .filter(v => !v.archiviato);
+    document.getElementById('conta-validazioni').textContent = validazioni.length + ' fogli';
+
+    if (!validazioni.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">Nessun foglio per questo mese.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = validazioni.map(v => {
+      const validatoAt = v.validatoAt ? new Date(v.validatoAt.seconds * 1000).toLocaleDateString('it-IT') : '—';
+      const isDomiciliare = v.tipo === 'domiciliare' || v.tipo === 'micronido' || v.tipo === 'doposcuola' || v.tipo === 'centro_estivo';
+      const statoHtml = v.stato === 'validato'
+        ? '<span class="pill pill-ok">✓ Validato</span>'
+        : '<span class="pill pill-open">In attesa</span>';
+
+      let azioneHtml;
+      if (v.stato === 'validato') {
+        azioneHtml = '<button onclick="scaricaPDF(\'' + v.id + '\')" style="background:none;border:1px solid #1a3a5c;border-radius:5px;padding:4px 10px;cursor:pointer;font-size:12px;color:#1a3a5c;">↓ PDF</button>';
+      } else if (isDomiciliare && v.pdfHtml) {
+        azioneHtml = '<button onclick="apriValidazioneDomiciliare(\'' + v.id + '\')" style="background:#c47a2e;border:none;border-radius:5px;padding:4px 10px;cursor:pointer;font-size:12px;color:white;font-weight:600;">✍ Firma</button>';
+      } else {
+        azioneHtml = '—';
+      }
+
+      const archiviaHtml = v.stato === 'validato'
+        ? '<button onclick="archiviaValidazione(\'' + v.id + '\')" title="Archivia" style="background:none;border:1px solid #6b7280;border-radius:5px;padding:4px 8px;cursor:pointer;font-size:12px;color:#6b7280;">📦</button>'
+        : '';
+      const eliminaHtml = '<button onclick="eliminaValidazione(\'' + v.id + '\',\'' + (v.minore||'').replace(/'/g,"\\'") + '\')" style="background:none;border:1px solid #b52b2b;border-radius:5px;padding:4px 8px;cursor:pointer;font-size:12px;color:#b52b2b;">🗑</button>';
+
+      return '<tr>' +
+        '<td>' + (v.educatoreNome || '—') + '</td>' +
+        '<td style="font-weight:600;">' + (v.minore || '—') + '</td>' +
+        '<td>' + (v.scuola || '—') + '</td>' +
+        '<td>' + (v.nomeMese || '') + ' ' + (v.anno || '') + '</td>' +
+        '<td>' + statoHtml + '</td>' +
+        '<td>' + validatoAt + '</td>' +
+        '<td>' + azioneHtml + '</td>' +
+        '<td>' + archiviaHtml + ' ' + eliminaHtml + '</td>' +
+      '</tr>';
+    }).join('');
+  } catch(err) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Errore caricamento validazioni.</td></tr>';
+  }
+}
+
+async function scaricaTuttiPDF() {
+  const mese = document.getElementById('f-mese').value;
+  if (!mese) { toast('Seleziona prima un mese nel filtro'); return; }
+
+  try {
+    toast('Preparazione PDF in corso…');
+    const snap = await _getDb().collection('validazioni')
+      .where('mese', '==', mese)
+      .where('stato', '==', 'validato')
+      .get({ source: 'server' });
+
+    const validazioni = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (!validazioni.length) { toast('Nessun foglio validato per questo mese'); return; }
+
+    const [anno, mm] = mese.split('-');
+    const nomeMese = nomiMesi()[parseInt(mm)];
+    const logoHtml = (typeof LOGO_B64 !== 'undefined') ? '<img src="' + LOGO_B64 + '" style="height:44px;margin-right:14px;">' : '';
+
+    // Apre ogni PDF in una nuova finestra con stampa automatica
+    // (i browser moderni bloccano popup multipli — usiamo un unico documento con tutti i fogli)
+    let tuttiHtml = '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">' +
+      '<style>' +
+      'body{font-family:Arial,sans-serif;font-size:12px;margin:0;}' +
+      '.foglio{margin:24px;page-break-after:always;}' +
+      '.foglio:last-child{page-break-after:avoid;}' +
+      '.header{display:flex;align-items:center;border-bottom:2px solid #1a3a5c;padding-bottom:12px;margin-bottom:16px;}' +
+      '.header h2{color:#1a3a5c;font-size:15px;margin:0 0 2px;}.header p{font-size:11px;color:#666;margin:0;}' +
+      '.meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;}' +
+      '.meta div{padding:5px 8px;background:#f5f5f5;border-radius:4px;}' +
+      '.meta label{font-size:10px;color:#888;display:block;}' +
+      'table{width:100%;border-collapse:collapse;margin-bottom:14px;}' +
+      'th{background:#1a3a5c;color:white;padding:6px 8px;text-align:left;font-size:11px;}' +
+      'td{padding:5px 8px;border-bottom:1px solid #eee;font-size:12px;}' +
+      '.tot{text-align:right;font-weight:700;padding:8px;background:#f5f5f5;}' +
+      '.firma-area{margin-top:20px;padding:12px;border:1px solid #ddd;border-radius:6px;}' +
+      '.validato{color:#065f46;font-weight:bold;font-size:13px;margin-bottom:8px;}' +
+      '@media print{.foglio{margin:16px;}}' +
+      '</style></head><body>';
+
+    for (const v of validazioni) {
+      const validatoAt = v.validatoAt ? new Date(v.validatoAt.seconds * 1000).toLocaleString('it-IT') : '';
+      const firmaHtml = v.firma ? '<img src="' + v.firma + '" style="max-width:240px;max-height:80px;">' : '';
+      const labelFirma = v.validatoDa === 'coordinatore' ? 'Firma Coordinatore' : 'Firma Referente Scolastico';
+
+      // Carica timbrature
+      const tSnap = await _getDb().collection('timbrature')
+        .where('educatoreId', '==', v.educatoreId)
+        .where('mese', '==', mese)
+        .get();
+      const timb = tSnap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(t => t.minore === v.minore)
+        .sort((a, b) => a.data.localeCompare(b.data));
+
+      const totOre = timb.reduce((s, t) => s + (calcolaOre(t.entrata, t.uscita) || 0), 0);
+      const righe = timb.map(t => {
+        const ore = calcolaOre(t.entrata, t.uscita);
+        const [y, m, d] = t.data.split('-');
+        return '<tr><td>' + d+'/'+m+'/'+y + '</td><td>' + (t.entrata||'—') + '</td><td>' + (t.uscita||'—') + '</td><td>' + (ore?ore.toFixed(2)+'h':'—') + '</td><td>' + (t.note||'') + '</td></tr>';
+      }).join('');
+
+      tuttiHtml += '<div class="foglio">' +
+        '<div class="header">' + logoHtml +
+          '<div><h2>Il Filo di Arianna — Foglio Presenze</h2><p>Cooperativa Sociale Il Filo di Arianna</p></div>' +
+        '</div>' +
+        '<div class="meta">' +
+          '<div><label>Minore</label>' + v.minore + '</div>' +
+          '<div><label>' + (v.tipo === 'domiciliare' ? 'Tipo' : 'Scuola') + '</label>' + (v.tipo === 'domiciliare' ? 'Domiciliare' : (v.scuola || '—')) + '</div>' +
+          '<div><label>Educatore</label>' + v.educatoreNome + '</div>' +
+          '<div><label>Mese</label>' + nomeMese + ' ' + anno + '</div>' +
+        '</div>' +
+        '<table><thead><tr><th>Data</th><th>Entrata</th><th>Uscita</th><th>Ore</th><th>Note</th></tr></thead>' +
+        '<tbody>' + righe + '</tbody></table>' +
+        '<div class="tot">Totale ore: ' + totOre.toFixed(2) + 'h</div>' +
+        '<div class="firma-area">' +
+          '<div class="validato">✓ Foglio validato</div>' +
+          '<div style="font-size:11px;color:#666;margin-bottom:6px;">' + labelFirma + ' · ' + validatoAt + '</div>' +
+          firmaHtml +
+        '</div>' +
+      '</div>';
+    }
+
+    tuttiHtml += '</body></html>';
+
+    const w = window.open('', '_blank');
+    w.document.write(tuttiHtml);
+    w.document.close();
+    w.focus();
+    setTimeout(function() { w.print(); }, 600);
+    toast(validazioni.length + ' PDF pronti per la stampa ✓');
+
+  } catch(err) {
+    alert('Errore: ' + err.message);
+    console.error(err);
+  }
+}
+
+// ── RICHIESTE ASSENZA ──
+
+async function aggiornaRichieste() {
+  const tbody = document.getElementById('richieste-body');
+  try {
+    const snap = await _getDb().collection('richieste_assenza').get({ source: 'server' });
+    const richieste = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a,b) => (b.creatoAt?.seconds||0) - (a.creatoAt?.seconds||0));
+    const inAttesa = richieste.filter(r => r.stato === 'attesa').length;
+    document.getElementById('conta-richieste').textContent = inAttesa ? inAttesa + ' in attesa' : richieste.length + ' totali';
+
+    if (!richieste.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">Nessuna richiesta.</td></tr>';
+      return;
+    }
+
+    const statoStyle = {
+      attesa: 'background:#fff3e0;color:#c47a2e',
+      approvata: 'background:#d1fae5;color:#065f46',
+      rifiutata: 'background:#fde8e8;color:#8C0E0E'
+    };
+    const statoLabel = { attesa:'⏳ In attesa', approvata:'✓ Approvata', rifiutata:'✗ Rifiutata' };
+
+    tbody.innerHTML = richieste.map(r => {
+      const azioni = r.stato === 'attesa'
+        ? '<button onclick="apriEsitoRichiesta(\'' + r.id + '\')" style="background:#1a3a5c;border:none;border-radius:4px;padding:4px 10px;color:white;font-size:11px;cursor:pointer;font-weight:600;">Gestisci</button>'
+        : '<button onclick="eliminaRichiestaDash(\'' + r.id + '\')" style="background:none;border:1px solid #b52b2b;border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer;color:#b52b2b;">🗑</button>';
+      return '<tr>' +
+        '<td>' + (r.educatoreNome||'—') + '</td>' +
+        '<td>' + (r.tipoLabel||r.tipo||'—') + '</td>' +
+        '<td>' + formatData(r.dal) + '</td>' +
+        '<td>' + (r.al && r.al !== r.dal ? formatData(r.al) : '—') + '</td>' +
+        '<td style="font-size:11px;color:#6b7280;">' + (r.dalle && r.alle ? r.dalle+'-'+r.alle+' ('+((r.oreParziali||0).toFixed(1))+'h) ' : '') + (r.note||'—') + '</td>' +
+        '<td><span style="font-size:11px;padding:3px 8px;border-radius:12px;' + (statoStyle[r.stato]||'') + ';">' + (statoLabel[r.stato]||r.stato) + '</span></td>' +
+        '<td>' + azioni + '</td>' +
+      '</tr>';
+    }).join('');
+  } catch(err) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">Errore caricamento.</td></tr>';
+  }
+}
+
+function apriEsitoRichiesta(id) {
+  const m = document.createElement('div');
+  m.id = 'modal-esito-rich';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:flex;align-items:center;justify-content:center;';
+  m.innerHTML = '<div style="background:#fff;border-radius:12px;padding:24px;width:92%;max-width:400px;">' +
+    '<h3 style="font-size:16px;font-weight:700;color:#1a3a5c;margin-bottom:14px;">Gestisci richiesta</h3>' +
+    '<div style="margin-bottom:12px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Note al richiedente (opzionale)</label>' +
+      '<input type="text" id="esito-note" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;" placeholder="Es. approvata, ricorda di compilare Ore+…"></div>' +
+    '<div style="display:flex;gap:8px;">' +
+      '<button onclick="document.getElementById(\'modal-esito-rich\').remove()" style="flex:1;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0f4f8;cursor:pointer;font-size:13px;">Annulla</button>' +
+      '<button onclick="gestisciRichiesta(\'' + id + '\',\'rifiutata\')" style="flex:1;padding:10px;border:none;border-radius:8px;background:#8C0E0E;color:white;cursor:pointer;font-size:13px;font-weight:700;">✗ Rifiuta</button>' +
+      '<button onclick="gestisciRichiesta(\'' + id + '\',\'approvata\')" style="flex:2;padding:10px;border:none;border-radius:8px;background:#1a7040;color:white;cursor:pointer;font-size:13px;font-weight:700;">✓ Approva</button>' +
+    '</div>' +
+  '</div>';
+  document.body.appendChild(m);
+}
+
+async function gestisciRichiesta(id, esito) {
+  const noteEl = document.getElementById('esito-note');
+  const noteCoordinatore = noteEl ? noteEl.value.trim() : '';
+  try {
+    // Carica la richiesta
+    const doc = await _getDb().collection('richieste_assenza').doc(id).get();
+    if (!doc.exists) { alert('Richiesta non trovata'); return; }
+    const r = { id: doc.id, ...doc.data() };
+
+    // Aggiorna stato
+    await _getDb().collection('richieste_assenza').doc(id).update({
+      stato: esito,
+      noteCoordinatore,
+      gestitaAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Se approvata: crea automaticamente voci Ore+ per i giorni nel periodo
+    if (esito === 'approvata') {
+      const tipoOa = r.tipo === 'ferie' ? 'ferie' : r.tipo === 'permesso' ? 'permesso' : 'altro';
+      const orDoc = await _getDb().collection('orari_settimanali').doc(r.educatoreId).get();
+      const orario = orDoc.exists ? orDoc.data() : {};
+      const giorni = ['domenica','lunedi','martedi','mercoledi','giovedi','venerdi','sabato'];
+
+      // Itera i giorni del periodo
+      const dataDal = new Date(r.dal + 'T12:00:00');
+      const dataAl = new Date((r.al || r.dal) + 'T12:00:00');
+      for (let d = new Date(dataDal); d <= dataAl; d.setDate(d.getDate() + 1)) {
+        const gg = giorni[d.getDay()];
+        // Usa ore parziali se specificate, altrimenti ore da orario
+        const oreFull = parseFloat(orario[gg] || 0);
+        const ore = r.oreParziali ? r.oreParziali : oreFull;
+        if (ore <= 0) continue; // giorno non lavorativo o 0h, salta
+        const dataStr = d.toISOString().slice(0, 10);
+        const mese = dataStr.slice(0, 7);
+        await _getDb().collection('ore_aggiuntive').add({
+          educatoreId: r.educatoreId,
+          educatoreNome: r.educatoreNome,
+          data: dataStr, mese,
+          categoria: tipoOa,
+          ore, note: r.note || '',
+          stato: 'validato',
+          validatoAt: firebase.firestore.FieldValue.serverTimestamp(),
+          validatoDa: 'coordinatore',
+          richiestaId: id,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+    }
+
+    // Notifica educatore
+    await _getDb().collection('notifiche').add({
+      destinatarioId: r.educatoreId,
+      destinatarioNome: r.educatoreNome,
+      tipo: 'esito_richiesta',
+      testo: 'La tua richiesta di ' + (r.tipoLabel||r.tipo) + ' è stata ' + (esito === 'approvata' ? '✓ approvata' : '✗ rifiutata') + (noteCoordinatore ? ': ' + noteCoordinatore : ''),
+      letta: false,
+      creatoAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    document.getElementById('modal-esito-rich').remove();
+    toast(esito === 'approvata' ? 'Richiesta approvata ✓' : 'Richiesta rifiutata');
+    aggiornaDash();
+  } catch(err) { alert('Errore: ' + err.message); }
+}
+
+async function scaricaCalendarioRichieste() {
+  const mese = document.getElementById('f-mese').value;
+  if (!mese) { toast('Seleziona prima un mese nel filtro'); return; }
+
+  const [anno, mm] = mese.split('-');
+  const annoN = parseInt(anno);
+  const mmN = parseInt(mm);
+  const nomeMese = nomiMesi()[mmN];
+  const giorniMese = new Date(annoN, mmN, 0).getDate();
+  const giorni = Array.from({ length: giorniMese }, (_, i) => i + 1);
+  const nomiGiorni = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+  const logoHtml = (typeof LOGO_B64 !== 'undefined') ? '<img src="' + LOGO_B64 + '" style="height:40px;margin-right:14px;">' : '';
+
+  try {
+    const snapEdu = await _getDb().collection('educatori').get();
+    const educatori = snapEdu.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a,b) => a.nome.localeCompare(b.nome));
+
+    const snapRich = await _getDb().collection('richieste_assenza').get({ source: 'server' });
+    const richieste = snapRich.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Mappa educatoreId -> { gg -> {tipo, tipoLabel, stato} }
+    const mappa = {};
+    educatori.forEach(e => { mappa[e.id] = {}; });
+    richieste.forEach(r => {
+      if (!mappa[r.educatoreId]) return;
+      const dal = new Date(r.dal + 'T12:00:00');
+      const al = new Date((r.al || r.dal) + 'T12:00:00');
+      for (let d = new Date(dal); d <= al; d.setDate(d.getDate() + 1)) {
+        const aMese = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+        if (aMese !== mese) continue;
+        mappa[r.educatoreId][d.getDate()] = { tipo: r.tipo, tipoLabel: r.tipoLabel || r.tipo, stato: r.stato, oreParziali: r.oreParziali || null, dalle: r.dalle || null, alle: r.alle || null };
+      }
+    });
+
+    // Colori per stato
+    const bgColori = { attesa: '#FFF3E0', approvata: '#D1FAE5', rifiutata: '#FDE8E8' };
+    const txtColori = { attesa: '#c47a2e', approvata: '#065f46', rifiutata: '#8C0E0E' };
+    const statoLabel = { attesa: '?', approvata: '✓', rifiutata: '✗' };
+    const tipoColori = { ferie: '#3B82F6', permesso: '#8B5CF6', altra_assenza: '#6B7280' };
+    const tipoSigla = { ferie: 'F', permesso: 'P', altra_assenza: 'A' };
+
+    // Intestazione giorni
+    const thGiorni = giorni.map(g => {
+      const dow = new Date(annoN, mmN - 1, g).getDay();
+      const isWe = dow === 0 || dow === 6;
+      const dowLabel = nomiGiorni[dow];
+      return '<th style="width:28px;text-align:center;padding:4px 2px;font-size:10px;background:' +
+        (isWe ? '#e5e7eb' : '#1a3a5c') + ';color:' + (isWe ? '#6b7280' : 'white') + ';border:1px solid #ddd;">' +
+        '<div style="font-weight:700;">' + g + '</div>' +
+        '<div style="font-weight:400;font-size:9px;">' + dowLabel + '</div></th>';
+    }).join('');
+
+    // Righe educatori
+    const righe = educatori.map(e => {
+      const celle = giorni.map(g => {
+        const dow = new Date(annoN, mmN - 1, g).getDay();
+        const isWe = dow === 0 || dow === 6;
+        const cell = mappa[e.id]?.[g];
+        if (!cell) {
+          return '<td style="background:' + (isWe ? '#f3f4f6' : 'white') + ';border:1px solid #eee;"></td>';
+        }
+        const bg = bgColori[cell.stato] || '#eee';
+        const txt = txtColori[cell.stato] || '#333';
+        const sigla = tipoSigla[cell.tipo] || '?';
+        const stato = statoLabel[cell.stato] || '';
+        let oreLabel = '';
+        if (cell.dalle && cell.alle) {
+          oreLabel = '<div style="font-size:7px;color:' + txt + ';line-height:1.2;">' + cell.dalle + '-' + cell.alle + '</div>';
+        } else if (cell.oreParziali) {
+          oreLabel = '<div style="font-size:8px;color:' + txt + ';">' + cell.oreParziali + 'h</div>';
+        }
+        const tooltipExtra = cell.dalle && cell.alle ? ' (' + cell.dalle + '-' + cell.alle + ')' : (cell.oreParziali ? ' (' + cell.oreParziali + 'h)' : '');
+        return '<td title="' + cell.tipoLabel + tooltipExtra + ' — ' + cell.stato + '" style="background:' + bg + ';border:1px solid #ddd;text-align:center;padding:2px 1px;">' +
+          '<div style="font-size:10px;font-weight:700;color:' + txt + ';">' + sigla + '</div>' +
+          '<div style="font-size:9px;color:' + txt + ';">' + stato + '</div>' +
+          oreLabel +
+        '</td>';
+      }).join('');
+      return '<tr><td style="padding:4px 8px;font-size:11px;font-weight:600;border:1px solid #eee;white-space:nowrap;background:#f8fafc;">' + e.nome + '</td>' + celle + '</tr>';
+    }).join('');
+
+    const html = '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">' +
+      '<title>Richieste_' + String(mmN).padStart(2,'0') + anno + '</title>' +
+      '<style>body{font-family:Arial,sans-serif;font-size:12px;margin:16px;}' +
+      '.header{display:flex;align-items:center;border-bottom:2px solid #1a3a5c;padding-bottom:10px;margin-bottom:14px;}' +
+      '.header h2{color:#1a3a5c;font-size:14px;margin:0 0 2px;}.header p{font-size:11px;color:#666;margin:0;}' +
+      'table{border-collapse:collapse;font-size:11px;}' +
+      '.legenda{margin-top:16px;display:flex;gap:16px;font-size:11px;flex-wrap:wrap;}' +
+      '.leg-item{display:flex;align-items:center;gap:6px;}' +
+      '.leg-box{width:28px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;}' +
+      '@media print{body{margin:6px;font-size:10px;}@page{size:A4 landscape;margin:8mm;}}' +
+      '</style></head><body>' +
+      '<div class="header">' + logoHtml +
+        '<div><h2>Il Filo di Arianna — Richieste di Assenza</h2><p>' + nomeMese + ' ' + anno + '</p></div>' +
+      '</div>' +
+      '<div style="overflow-x:auto;">' +
+      '<table><thead><tr>' +
+        '<th style="text-align:left;padding:4px 8px;font-size:11px;background:#1a3a5c;color:white;border:1px solid #ddd;min-width:120px;">Operatore</th>' +
+        thGiorni +
+      '</tr></thead><tbody>' + righe + '</tbody></table></div>' +
+      '<div class="legenda">' +
+        '<div class="leg-item"><div class="leg-box" style="background:#D1FAE5;color:#065f46;">F✓</div> Ferie approvata</div>' +
+        '<div class="leg-item"><div class="leg-box" style="background:#FFF3E0;color:#c47a2e;">F?</div> Ferie in attesa</div>' +
+        '<div class="leg-item"><div class="leg-box" style="background:#FDE8E8;color:#8C0E0E;">F✗</div> Ferie rifiutata</div>' +
+        '<div class="leg-item"><div class="leg-box" style="background:#D1FAE5;color:#065f46;">P✓</div> Permesso approvato</div>' +
+        '<div class="leg-item"><div class="leg-box" style="background:#D1FAE5;color:#065f46;">A✓</div> Altra assenza approvata</div>' +
+      '</div></body></html>';
+
+    const w = window.open('', '_blank');
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(function() { w.print(); }, 600);
+    toast('Calendario aperto ✓');
+  } catch(err) {
+    alert('Errore: ' + err.message);
+    console.error(err);
+  }
+}
+
+async function eliminaRichiestaDash(id) {
+  if (!confirm('Eliminare questa richiesta?')) return;
+  try {
+    await _getDb().collection('richieste_assenza').doc(id).delete();
+    toast('Eliminata'); await aggiornaRichieste();
+  } catch(err) { alert('Errore: ' + err.message); }
+}
+
+// ── ORARI SETTIMANALI ──
+
+async function openOrari() {
+  try {
+    const snap = await _getDb().collection('educatori').get();
+    const educatori = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => a.nome.localeCompare(b.nome));
+    let orariMap = {};
+    try {
+      const orariSnap = await _getDb().collection('orari_settimanali').get();
+      orariSnap.docs.forEach(d => { orariMap[d.id] = d.data(); });
+    } catch(e) { /* collezione non ancora esistente */ }
+
+    const giorni = ['lunedi','martedi','mercoledi','giovedi','venerdi','sabato'];
+    // Rimuovi modal precedente se esiste
+    const old = document.getElementById('modal-orari-lista');
+    if (old) old.remove();
+
+    const m = document.createElement('div');
+    m.id = 'modal-orari-lista';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:flex;align-items:center;justify-content:center;';
+    m.innerHTML = '<div style="background:#fff;border-radius:12px;padding:24px;width:92%;max-width:520px;max-height:85vh;overflow-y:auto;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">' +
+        '<h2 style="font-size:17px;font-weight:700;color:#1a3a5c;">⏱ Orari settimanali</h2>' +
+        '<button onclick="document.getElementById(\'modal-orari-lista\').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;">×</button>' +
+      '</div>' +
+      educatori.map(e => {
+        const o = orariMap[e.id];
+        const tot = o ? giorni.reduce((s,g) => s + parseFloat(o[g]||0), 0) : 0;
+        const badge = o
+          ? '<span style="color:#065f46;font-size:11px;">✓ ' + tot.toFixed(1) + 'h/sett</span>'
+          : '<span style="color:#c47a2e;font-size:11px;">⚠ Non configurato</span>';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;">' +
+          '<div><div style="font-size:14px;font-weight:600;">' + e.nome + '</div><div style="margin-top:2px;">' + badge + '</div></div>' +
+          '<button onclick="apriModalOrario(\'' + e.id + '\',\'' + e.nome.replace(/'/g,"\\'") + '\')" style="padding:6px 12px;border:1px solid #1a3a5c;border-radius:6px;background:none;font-size:12px;cursor:pointer;color:#1a3a5c;">Configura</button>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+    document.body.appendChild(m);
+  } catch(err) {
+    alert('Errore apertura orari: ' + err.message);
+    console.error(err);
+  }
+}
+
+async function apriModalOrario(eduId, eduNome) {
+  try {
+    const lista = document.getElementById('modal-orari-lista');
+    if (lista) lista.remove();
+    document.getElementById('orario-edu-id').value = eduId;
+    document.getElementById('orario-edu-nome').textContent = eduNome;
+    // Carica orario esistente — ignora errore se collezione non esiste
+    let o = {};
+    try {
+      const doc = await _getDb().collection('orari_settimanali').doc(eduId).get();
+      if (doc.exists) o = doc.data();
+    } catch(e) { /* prima volta, collezione non ancora esistente */ }
+    ['lunedi','martedi','mercoledi','giovedi','venerdi','sabato'].forEach(g => {
+      const el = document.getElementById('orario-' + g);
+      if (el) { el.value = o[g] || 0; el.oninput = aggiornaTotsettOrario; }
+    });
+    aggiornaTotsettOrario();
+    document.getElementById('modal-orario').style.display = 'flex';
+  } catch(err) {
+    alert('Errore: ' + err.message);
+    console.error(err);
+  }
+}
+
+function aggiornaTotsettOrario() {
+  const tot = ['lunedi','martedi','mercoledi','giovedi','venerdi','sabato']
+    .reduce((s,g) => s + parseFloat(document.getElementById('orario-'+g)?.value||0), 0);
+  document.getElementById('orario-tot-sett').textContent = tot.toFixed(1) + 'h';
+}
+
+async function salvaOrarioSettimanale() {
+  const eduId = document.getElementById('orario-edu-id').value;
+  const orario = {};
+  ['lunedi','martedi','mercoledi','giovedi','venerdi','sabato'].forEach(g => {
+    orario[g] = parseFloat(document.getElementById('orario-' + g).value || 0);
+  });
+  try {
+    await _getDb().collection('orari_settimanali').doc(eduId).set({ educatoreId: eduId, ...orario, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    document.getElementById('modal-orario').style.display = 'none';
+    toast('Orario salvato ✓');
+  } catch(err) { alert('Errore: ' + err.message); }
+}
+
+// ── ORE AGGIUNTIVE DASHBOARD ──
+
+async function aggiornaOreAgg() {
+  const mese = document.getElementById('f-mese').value;
+  const tbody = document.getElementById('ore-agg-body');
+  if (!mese) { if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="empty">Seleziona un mese.</td></tr>'; return; }
+  if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="empty">Caricamento...</td></tr>';
+  try {
+    const snapAll = await _getDb().collection('ore_aggiuntive').get();
+    const tutti = snapAll.docs.map(d => ({ id: d.id, ...d.data() }));
+    const voci = tutti.filter(v => v.mese === mese && !v.archiviato).sort((a,b) => (a.data||'').localeCompare(b.data||''));
+    document.getElementById('conta-ore-agg').textContent = voci.length + ' voci';
+    if (!voci.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">Nessuna voce per ' + mese + '.</td></tr>'; return; }
+    const catLabel = { malattia:'🤒 Malattia', ferie:'🏖 Ferie', permesso:'🕐 Permesso', ore_extra:'⏱ Ore Extra', altro:'📋 Altro' };
+    tbody.innerHTML = voci.map(v => {
+      const [y,m,d] = (v.data||'').split('-');
+      const statoHtml = v.stato === 'validato' ? '<span class="pill pill-ok">✓ Validato</span>' : '<span class="pill pill-open">In attesa</span>';
+      const azioni = (v.stato !== 'validato' ? '<button onclick="validaOraAgg(\'' + v.id + '\')" style="background:#1a3a5c;border:none;border-radius:4px;padding:3px 8px;color:white;font-size:11px;cursor:pointer;margin-right:4px;">✓</button>' : '') +
+        '<button onclick="archiviaOraAgg(\'' + v.id + '\')" title="Archivia" style="background:none;border:1px solid #6b7280;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;color:#6b7280;margin-right:4px;">📦</button>' +
+        '<button onclick="eliminaOraAggDash(\'' + v.id + '\',\'' + (v.educatoreNome||'').replace(/'/g,"\\'") + '\')" style="background:none;border:1px solid #b52b2b;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;color:#b52b2b;">🗑</button>';
+      return '<tr><td>' + (v.educatoreNome||'—') + '</td><td>' + (d||'')+'/'+(m||'')+'/'+(y||'') + '</td><td>' + (catLabel[v.categoria]||'—') + '</td><td style="font-weight:700;">' + (v.ore||0).toFixed(2) + 'h</td><td style="font-size:11px;color:#6b7280;">' + (v.note||'—') + '</td><td>' + statoHtml + '</td><td>' + azioni + '</td></tr>';
+    }).join('');
+  } catch(err) { if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="empty" style="color:red;">Errore: ' + err.message + '</td></tr>'; console.error(err); }
+}
+
+async function archiviaOraAgg(id) {
+  try {
+    await _getDb().collection('ore_aggiuntive').doc(id).update({ archiviato: true });
+    toast('Voce archiviata ✓');
+    await aggiornaOreAgg();
+  } catch(err) { alert('Errore: ' + err.message); }
+}
+
+async function validaOraAgg(id) {
+  try {
+    await _getDb().collection('ore_aggiuntive').doc(id).update({ stato: 'validato', validatoAt: firebase.firestore.FieldValue.serverTimestamp(), validatoDa: 'coordinatore' });
+    toast('Validato ✓'); await aggiornaOreAgg();
+  } catch(err) { alert('Errore: ' + err.message); }
+}
+
+async function eliminaOraAggDash(id, nome) {
+  if (!confirm('Eliminare questa voce di ' + nome + '?')) return;
+  try { await _getDb().collection('ore_aggiuntive').doc(id).delete(); toast('Eliminata'); await aggiornaOreAgg(); }
+  catch(err) { alert('Errore: ' + err.message); }
+}
+
+function apriAggiungiOraAgg() {
+  const mese = document.getElementById('f-mese').value;
+  if (!mese) { toast('Seleziona prima un mese nel filtro'); return; }
+  const m = document.createElement('div');
+  m.id = 'modal-add-oa';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:flex;align-items:center;justify-content:center;';
+  m.innerHTML = '<div style="background:#fff;border-radius:12px;padding:24px;width:92%;max-width:420px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><h3 style="font-size:16px;font-weight:700;color:#1a3a5c;">+ Ore aggiuntive</h3><button onclick="document.getElementById(\'modal-add-oa\').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;">×</button></div>' +
+    '<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Educatore</label><select id="oa-d-edu" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;"><option value="">Caricamento…</option></select></div>' +
+    '<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Data</label><input type="date" id="oa-d-data" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;"></div>' +
+    '<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Categoria</label><select id="oa-d-cat" onchange="aggiornaOreAggModal()" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;"><option value="malattia">🤒 Malattia</option><option value="ferie">🏖 Ferie</option><option value="permesso">🕐 Permesso</option><option value="ore_extra">⏱ Ore Extra</option></select></div>' +
+    '<div id="oa-d-orario" style="display:none;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;"><div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Entrata</label><input type="time" id="oa-d-in" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;"></div><div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Uscita</label><input type="time" id="oa-d-out" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;"></div></div>' +
+    '<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Ore (lascia vuoto per calcolo automatico)</label><input type="number" id="oa-d-ore" min="0" max="12" step="0.5" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;" placeholder="Auto"></div>' +
+    '<div style="margin-bottom:14px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Note</label><input type="text" id="oa-d-note" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;" placeholder="Es. codice certificato malattia"></div>' +
+    '<div style="display:flex;gap:8px;"><button onclick="document.getElementById(\'modal-add-oa\').remove()" style="flex:1;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f0f4f8;cursor:pointer;">Annulla</button><button onclick="salvaOraAggDash(\'' + mese + '\')" style="flex:2;padding:10px;border:none;border-radius:8px;background:#1a3a5c;color:white;font-weight:700;cursor:pointer;">+ Aggiungi</button></div>' +
+  '</div>';
+  document.body.appendChild(m);
+  _getDb().collection('educatori').get().then(snap => {
+    document.getElementById('oa-d-edu').innerHTML = '<option value="">— Seleziona —</option>' +
+      snap.docs.sort((a,b) => a.data().nome.localeCompare(b.data().nome)).map(d => '<option value="' + d.id + '">' + d.data().nome + '</option>').join('');
+  });
+}
+
+function aggiornaOreAggModal() {
+  const cat = document.getElementById('oa-d-cat').value;
+  document.getElementById('oa-d-orario').style.display = (cat === 'formazione' || cat === 'altro') ? 'grid' : 'none';
+}
+
+async function salvaOraAggDash(mese) {
+  const eduId = document.getElementById('oa-d-edu').value;
+  const data = document.getElementById('oa-d-data').value;
+  const categoria = document.getElementById('oa-d-cat').value;
+  const note = document.getElementById('oa-d-note').value.trim();
+  if (!eduId || !data) { toast('Compila educatore e data'); return; }
+  const needsOrario = categoria === 'formazione' || categoria === 'altro';
+  let ore = parseFloat(document.getElementById('oa-d-ore').value || 0);
+  let entrata = '', uscita = '';
+  if (needsOrario) {
+    entrata = document.getElementById('oa-d-in').value;
+    uscita = document.getElementById('oa-d-out').value;
+    if (entrata && uscita) ore = calcolaOre(entrata, uscita) || ore;
+  }
+  if (!ore) {
+    const orDoc = await _getDb().collection('orari_settimanali').doc(eduId).get();
+    if (orDoc.exists) {
+      const g = ['domenica','lunedi','martedi','mercoledi','giovedi','venerdi','sabato'][new Date(data + 'T12:00:00').getDay()];
+      ore = parseFloat(orDoc.data()[g] || 0);
+    }
+  }
+  const eduSnap = await _getDb().collection('educatori').doc(eduId).get();
+  const eduNome = eduSnap.exists ? eduSnap.data().nome : '';
+  try {
+    await _getDb().collection('ore_aggiuntive').add({ educatoreId: eduId, educatoreNome: eduNome, data, mese, categoria, ore, entrata, uscita, note, stato: 'validato', validatoAt: firebase.firestore.FieldValue.serverTimestamp(), validatoDa: 'coordinatore', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    document.getElementById('modal-add-oa').remove();
+    toast('Aggiunto ✓'); await aggiornaOreAgg();
+  } catch(err) { alert('Errore: ' + err.message); }
+}
+
+async function scaricaFoglioOreAgg() {
+  const mese = document.getElementById('f-mese').value;
+  if (!mese) { toast('Seleziona prima un mese'); return; }
+  const [anno, mm] = mese.split('-');
+  const nomeMese = nomiMesi()[parseInt(mm)];
+  const logoHtml = (typeof LOGO_B64 !== 'undefined') ? '<img src="' + LOGO_B64 + '" style="height:44px;margin-right:14px;">' : '';
+  const snap = await _getDb().collection('ore_aggiuntive').where('mese', '==', mese).where('stato', '==', 'validato').get();
+  const voci = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => a.educatoreNome.localeCompare(b.educatoreNome) || a.data.localeCompare(b.data));
+  if (!voci.length) { toast('Nessuna voce validata per questo mese'); return; }
+  const perEdu = {};
+  voci.forEach(v => { if (!perEdu[v.educatoreNome]) perEdu[v.educatoreNome] = []; perEdu[v.educatoreNome].push(v); });
+  const catLabel = { malattia:'Malattia', ferie:'Ferie', permesso:'Permesso', ore_extra:'Ore Extra' };
+  const html = '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>OreAggiuntive_' + mm+anno + '</title>' +
+    '<style>body{font-family:Arial,sans-serif;font-size:12px;margin:24px;}.header{display:flex;align-items:center;border-bottom:2px solid #1a3a5c;padding-bottom:12px;margin-bottom:20px;}.header h2{color:#1a3a5c;font-size:15px;margin:0 0 2px;}.header p{font-size:11px;color:#666;margin:0;}.educatore{margin-bottom:20px;}.edu-hd{font-size:14px;font-weight:700;color:#1a3a5c;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:4px;}table{width:100%;border-collapse:collapse;margin-bottom:8px;}th{background:#1a3a5c;color:white;padding:5px 8px;text-align:left;font-size:11px;}td{padding:4px 8px;border-bottom:1px solid #eee;}.tot{text-align:right;font-weight:700;padding:6px 8px;background:#f5f5f5;}@media print{.educatore{page-break-inside:avoid;}}</style>' +
+    '</head><body><div class="header">' + logoHtml + '<div><h2>Il Filo di Arianna — Ore Aggiuntive</h2><p>' + nomeMese + ' ' + anno + '</p></div></div>' +
+    Object.entries(perEdu).map(([nome, righe]) => {
+      const tot = righe.reduce((s,v) => s+(v.ore||0), 0);
+      return '<div class="educatore"><div class="edu-hd">' + nome + '</div><table><thead><tr><th>Data</th><th>Categoria</th><th>Ore</th><th>Note</th></tr></thead><tbody>' +
+        righe.map(v => { const [y,m,d] = v.data.split('-'); return '<tr><td>' + d+'/'+m+'/'+y + '</td><td>' + (catLabel[v.categoria]||v.categoria) + '</td><td>' + (v.ore||0).toFixed(2) + 'h</td><td>' + (v.note||'') + '</td></tr>'; }).join('') +
+        '</tbody></table><div class="tot">Totale: ' + tot.toFixed(2) + 'h</div></div>';
+    }).join('') + '</body></html>';
+  const w = window.open('', '_blank');
+  w.document.write(html); w.document.close(); w.focus();
+  setTimeout(function() { w.print(); }, 500);
+}
+
+async function archiviaValidazione(id) {
+  if (!confirm('Archiviare questo foglio? Sparirà dalla lista ma sarà recuperabile dall\'Archivio.')) return;
+  try {
+    await _getDb().collection('validazioni').doc(id).update({ archiviato: true });
+    toast('Foglio archiviato ✓');
+    await aggiornaValidazioni();
+  } catch(err) {
+    alert('Errore: ' + err.message);
+  }
+}
+
+async function eliminaValidazione(id, minore) {
+  if (!confirm('Eliminare il foglio di ' + minore + '? L\'operazione non è reversibile.')) return;
+  try {
+    await _getDb().collection('validazioni').doc(id).delete();
+    toast('Foglio eliminato');
+    await aggiornaValidazioni();
+  } catch(err) {
+    alert('Errore: ' + err.message);
+  }
+}
+
+async function openArchivio() {
+  document.getElementById('modal-archivio').style.display = 'flex';
+  await caricaArchivio();
+}
+
+async function caricaArchivio() {
+  const wrap = document.getElementById('archivio-lista');
+  wrap.innerHTML = '<p style="font-size:13px;color:#6b7280;">Caricamento…</p>';
+  try {
+    const snap = await _getDb().collection('validazioni')
+      .where('archiviato', '==', true)
+      .get({ source: 'server' });
+    const archiviati = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.validatoAt?.seconds||0) - (a.validatoAt?.seconds||0));
+    if (!archiviati.length) {
+      wrap.innerHTML = '<p style="font-size:13px;color:#6b7280;">Nessun foglio archiviato.</p>';
+      return;
+    }
+    wrap.innerHTML = archiviati.map(v => {
+      const validatoAt = v.validatoAt ? new Date(v.validatoAt.seconds*1000).toLocaleDateString('it-IT') : '—';
+      const tipoLabel = v.tipo === 'domiciliare' ? '(dom.)' : v.tipo === 'micronido' ? '(micronido)' : v.tipo === 'doposcuola' ? '(doposcuola)' : v.tipo === 'centro_estivo' ? '(c.estivo)' : '(scol.)';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;">' +
+        '<div>' +
+          '<div style="font-size:14px;font-weight:600;">' + (v.minore||'—') + ' <span style="font-size:11px;color:#6b7280;">' + tipoLabel + '</span></div>' +
+          '<div style="font-size:12px;color:#6b7280;">' + (v.educatoreNome||'') + ' · ' + (v.nomeMese||'') + ' ' + (v.anno||'') + ' · ' + validatoAt + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;">' +
+          '<button onclick="scaricaPDF(\'' + v.id + '\')" style="background:none;border:1px solid #1a3a5c;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#1a3a5c;">↓ PDF</button>' +
+          '<button onclick="desarchivia(\'' + v.id + '\')" style="background:none;border:1px solid #6b7280;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#6b7280;">↩</button>' +
+          '<button onclick="eliminaArchivio(\'' + v.id + '\')" style="background:none;border:1px solid #b52b2b;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;color:#b52b2b;">🗑</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(err) {
+    wrap.innerHTML = '<p style="font-size:13px;color:#b52b2b;">Errore: ' + err.message + '</p>';
+  }
+}
+
+async function desarchivia(id) {
+  try {
+    await _getDb().collection('validazioni').doc(id).update({ archiviato: false });
+    toast('Foglio ripristinato');
+    await caricaArchivio();
+    await aggiornaValidazioni();
+  } catch(err) { alert('Errore: ' + err.message); }
+}
+
+async function eliminaArchivio(id) {
+  if (!confirm('Eliminare definitivamente questo foglio? Non è reversibile.')) return;
+  try {
+    await _getDb().collection('validazioni').doc(id).delete();
+    toast('Foglio eliminato');
+    await caricaArchivio();
+  } catch(err) { alert('Errore: ' + err.message); }
+}
+
+async function apriValidazioneDomiciliare(token) {
+  try {
+    const doc = await _getDb().collection('validazioni').doc(token).get();
+    if (!doc.exists) { alert('Foglio non trovato'); return; }
+    const v = { id: doc.id, ...doc.data() };
+
+    document.getElementById('modal-firma-coord').style.display = 'flex';
+    document.getElementById('firma-coord-titolo').textContent = v.minore + ' — ' + (v.nomeMese || '') + ' ' + (v.anno || '');
+    document.getElementById('firma-coord-edu').textContent = 'Educatore: ' + v.educatoreNome;
+    document.getElementById('firma-coord-token').value = token;
+
+    // Mostra anteprima firma coordinatore
+    if (typeof FIRMA_COORD_B64 !== 'undefined') {
+      document.getElementById('firma-coord-preview').src = FIRMA_COORD_B64;
+    }
+
+    // Mostra anteprima foglio
+    if (v.pdfHtml) {
+      document.getElementById('firma-coord-iframe').srcdoc = v.pdfHtml;
+    }
+
+    document.getElementById('btn-firma-coord').disabled = false;
+    document.getElementById('btn-firma-coord').textContent = '✓ Valida con firma';
+  } catch(err) {
+    alert('Errore: ' + err.message);
+  }
+}
+
+async function confermaFirmaCoord() {
+  const token = document.getElementById('firma-coord-token').value;
+  const btn = document.getElementById('btn-firma-coord');
+  btn.disabled = true; btn.textContent = 'Salvataggio…';
+
+  // Usa la firma automatica del coordinatore
+  const firma = (typeof FIRMA_COORD_B64 !== 'undefined') ? FIRMA_COORD_B64 : '';
+
+  try {
+    await _getDb().collection('validazioni').doc(token).update({
+      stato: 'validato',
+      firma: firma,
+      validatoAt: firebase.firestore.FieldValue.serverTimestamp(),
+      validatoDa: 'coordinatore'
+    });
+    document.getElementById('modal-firma-coord').style.display = 'none';
+    toast('Foglio validato ✓');
+    aggiornaDash();
+  } catch(err) {
+    btn.disabled = false; btn.textContent = '✓ Valida con firma';
+    alert('Errore: ' + err.message);
+  }
+}
+
+// Rimosse: inizializzaCanvasCoord, pulisciCanvasCoord (non più necessarie)
+
+function nomeFileValidato(v) {
+  const parti = (v.mese || '').split('-');
+  const anno = parti[0] || '';
+  const mm = String(parseInt(parti[1] || '0')).padStart(2, '0');
+  const meseAnno = mm + anno;
+
+  const tipoMap = {
+    'scolastico': 'scolastica',
+    'domiciliare': 'domiciliare',
+    'micronido': 'micronido',
+    'doposcuola': 'doposcuola',
+    'centro_estivo': 'campoestivo'
+  };
+  const tipo = tipoMap[v.tipo] || v.tipo || 'scolastica';
+
+  // Nome minore/servizio senza spazi
+  const nomeMinore = (v.minore || '').replace(/\s+/g, '');
+
+  // Operatore: CognomeNome senza spazi
+  const operatore = (v.educatoreNome || '').replace(/\s+/g, '');
+
+  // Micronido: niente nome minore
+  if (tipo === 'micronido') {
+    return tipo + '_' + meseAnno + '_' + operatore;
+  }
+  return tipo + '_' + nomeMinore + '_' + meseAnno + '_' + operatore;
+}
+
+async function scaricaPDF(token) {
+  try {
+    const doc = await _getDb().collection('validazioni').doc(token).get();
+    if (!doc.exists) { alert('Validazione non trovata'); return; }
+    const v = { id: doc.id, ...doc.data() };
+
+    // Carica timbrature
+    const snap = await _getDb().collection('timbrature')
+      .where('educatoreId', '==', v.educatoreId)
+      .where('mese', '==', v.mese)
+      .get();
+    const timb = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(t => t.minore === v.minore)
+      .sort((a, b) => a.data.localeCompare(b.data));
+
+    scaricaDiretto(v, timb);
+  } catch(err) {
+    alert('Errore: ' + err.message);
+  }
+}
+
+function scaricaDiretto(v, timbrature) {
+  const totOre = timbrature.reduce((s, t) => s + (calcolaOre(t.entrata, t.uscita) || 0), 0);
+  const validatoAt = v.validatoAt ? new Date(v.validatoAt.seconds * 1000).toLocaleString('it-IT') : '';
+  const parti = (v.mese || '').split('-');
+  const nomeMese = nomiMesi()[parseInt(parti[1] || '0')];
+  const anno = parti[0] || '';
+  const labelFirma = (v.tipo === 'domiciliare' || v.tipo === 'micronido' || v.tipo === 'doposcuola' || v.tipo === 'centro_estivo' || v.tipo === 'centro_estivo') ? 'Firma Coordinatore' : 'Firma Referente Scolastico';
+  const firmaHtml = v.firma ? '<img src="' + v.firma + '" style="max-width:280px;max-height:100px;">' : '—';
+  const logoHtml = (typeof LOGO_B64 !== 'undefined') ? '<img src="' + LOGO_B64 + '" style="height:44px;margin-right:14px;">' : '';
+
+  const righeHtml = timbrature.map(t => {
+    const ore = calcolaOre(t.entrata, t.uscita);
+    const [y, m, d] = t.data.split('-');
+    return '<tr><td>' + d+'/'+m+'/'+y + '</td><td>' + (t.entrata||'—') + '</td><td>' + (t.uscita||'—') + '</td><td>' + (ore?ore.toFixed(2)+'h':'—') + '</td><td>' + (t.note||'') + '</td></tr>';
+  }).join('');
+
+  const nomeFile = nomeFileValidato(v);
+  const html = '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>' + nomeFile + '</title><style>' +
+    'body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:24px;}' +
+    '.header{display:flex;align-items:center;border-bottom:2px solid #1a3a5c;padding-bottom:12px;margin-bottom:16px;}' +
+    '.header h1{font-size:15px;color:#1a3a5c;margin:0 0 2px;}.header p{font-size:11px;color:#666;margin:0;}' +
+    '.info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}' +
+    '.info div{padding:6px 8px;background:#f5f5f5;border-radius:4px;}' +
+    '.info label{font-size:10px;color:#888;display:block;}' +
+    'table{width:100%;border-collapse:collapse;margin-bottom:16px;}' +
+    'th{background:#1a3a5c;color:white;padding:6px 8px;text-align:left;font-size:11px;}' +
+    'td{padding:5px 8px;border-bottom:1px solid #eee;}' +
+    '.tot{font-weight:bold;text-align:right;padding:8px;background:#f5f5f5;}' +
+    '.firma-area{margin-top:16px;padding:12px;border:1px solid #ddd;border-radius:6px;}' +
+    '.validato{color:#065f46;font-weight:bold;font-size:13px;margin-bottom:8px;}' +
+    '</style></head><body>' +
+    '<div class="header">' + logoHtml +
+      '<div><h1>Il Filo di Arianna — Foglio Presenze</h1><p>Cooperativa Sociale Il Filo di Arianna</p></div></div>' +
+    '<div class="info">' +
+      '<div><label>Minore/Servizio</label>' + v.minore + '</div>' +
+      '<div><label>Scuola/Sede</label>' + (v.scuola||'—') + '</div>' +
+      '<div><label>Educatore</label>' + v.educatoreNome + '</div>' +
+      '<div><label>Mese</label>' + nomeMese + ' ' + anno + '</div>' +
+    '</div>' +
+    '<table><thead><tr><th>Data</th><th>Entrata</th><th>Uscita</th><th>Ore</th><th>Note</th></tr></thead>' +
+    '<tbody>' + righeHtml + '</tbody></table>' +
+    '<div class="tot">Totale ore: ' + totOre.toFixed(2) + 'h</div>' +
+    '<div class="firma-area">' +
+      '<div class="validato">✓ Validato il: ' + validatoAt + '</div>' +
+      '<div style="font-size:11px;color:#666;margin-bottom:6px;">' + labelFirma + ':</div>' +
+      firmaHtml +
+    '</div></body></html>';
+
+  // Apre in nuova finestra con titolo corretto — il browser propone il titolo come nome PDF
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, '_blank');
+  if (w) {
+    w.onload = function() {
+      setTimeout(function() { w.print(); }, 400);
+    };
+  }
+  setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+}
+
+function resetFiltri() {
+  document.getElementById('f-edu').value = '';
+  document.getElementById('f-minore').value = '';
+  aggiornaDash();
+}
+
+async function esportaTutto() {
+  const mese = document.getElementById('f-mese').value;
+  if (!mese) { toast('Seleziona prima un mese nel filtro'); return; }
+
+  try {
+    const timb = await syncGetTutteTimbrature(mese);
+    if (!timb.length) { toast('Nessuna timbratura per questo mese'); return; }
+
+    const [anno, mm] = mese.split('-');
+    const nm = nomiMesi();
+    const nomeMese = nm[parseInt(mm)];
+    const wb = XLSX.utils.book_new();
+
+    // Raggruppa per educatore
+    const perEdu = {};
+    timb.forEach(t => {
+      if (!perEdu[t.educatoreId]) perEdu[t.educatoreId] = { nome: t.educatoreNome || 'Sconosciuto', timb: [] };
+      perEdu[t.educatoreId].timb.push(t);
+    });
+
+    Object.values(perEdu).forEach(e => {
+      // Raggruppa per minore
+      const perMin = {};
+      e.timb.forEach(t => {
+        const k = t.minore + '||' + t.scuola;
+        if (!perMin[k]) perMin[k] = { minore: t.minore, scuola: t.scuola, comune: t.comune || '', timb: [] };
+        perMin[k].timb.push(t);
+      });
+
+      Object.values(perMin).forEach(g => {
+        const righe = costruisciRighe(g, nomeMese, anno, mm, e.nome);
+        const ws = XLSX.utils.aoa_to_sheet(righe);
+        ws['!cols'] = [{wch:8},{wch:8},{wch:8},{wch:10},{wch:32},{wch:28},{wch:28}];
+        const nomeSheet = (e.nome.split(' ')[0] + ' - ' + g.minore).slice(0, 31);
+        XLSX.utils.book_append_sheet(wb, ws, nomeSheet);
+      });
+    });
+
+    XLSX.writeFile(wb, 'Presenze_TUTTI_' + nomeMese + '_' + anno + '.xlsx');
+    toast('Export completato ✓');
+  } catch(err) {
+    alert('Errore durante l\'export: ' + err.message);
+    console.error('esportaTutto error:', err);
+  }
+}
+
+function costruisciRighe(g, nomeMese, anno, mm, nomeEdu) {
+  const mmInt = parseInt(mm);
+  const giorniMese = new Date(parseInt(anno), mmInt, 0).getDate();
+  const righe = [
+    ['Il Filo di Arianna - Foglio Presenze','','','','','',''],
+    ['Cooperativa Sociale Il Filo di Arianna','','','','','',''],
+    ['COMUNE: ' + (g.comune||'___') + '   MINORE: ' + g.minore,'','','','','',''],
+    ['SCUOLA: ' + g.scuola,'','','','','',''],
+    ['Mese di ' + nomeMese + ' ' + anno,'','','','','',''],
+    ['','Operatore: ' + nomeEdu,'','','','',''],
+    [''],
+    ['Giorno','Dalle','Alle','Tot Ore','Note','GPS Entrata','GPS Uscita'],
+  ];
+  for (var gg = 1; gg <= giorniMese; gg++) {
+    var ds = anno + '-' + String(mmInt).padStart(2,'0') + '-' + String(gg).padStart(2,'0');
+    var t = g.timb.find(function(x) { return x.data === ds; });
+    var ore = t ? calcolaOre(t.entrata, t.uscita) : null;
+    righe.push([gg, t?(t.entrata||''):'', t?(t.uscita||''):'', ore !== null ? parseFloat(ore.toFixed(2)) : '', t?(t.note||''):'', t?(t.gpsEntrata||''):'', t?(t.gpsUscita||''):'' ]);
+  }
+  var tot = g.timb.reduce(function(s,t){ return s+(calcolaOre(t.entrata,t.uscita)||0); }, 0);
+  righe.push([''],['TOTALE ORE','','',parseFloat(tot.toFixed(2)),'','','']);
+  righe.push([''],['Firma Operatore','','','','Referente Scolastico','','']);
+  return righe;
+}
+
+function toast(msg, ms=2500) {
+  const t = document.getElementById('toast-gestione');
+  if (!t) return;
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:9px 18px;border-radius:30px;font-size:12px;opacity:1;z-index:999;white-space:nowrap;';
+  setTimeout(function() { t.style.opacity = '0'; }, ms);
+}
+</script>
+<!-- Modal modifica timbratura -->
+<div id="modal-modifica" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:24px;width:90%;max-width:420px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1a3a5c;">Modifica timbratura</h2>
+      <button onclick="closeModifica()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;">×</button>
+    </div>
+    <div id="modifica-info" style="font-size:13px;color:#888;margin-bottom:16px;"></div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;display:block;margin-bottom:5px;">Entrata</label>
+      <input type="time" id="mod-entrata" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:6px;font-size:16px;">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;display:block;margin-bottom:5px;">Uscita</label>
+      <input type="time" id="mod-uscita" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:6px;font-size:16px;">
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;display:block;margin-bottom:5px;">Note</label>
+      <textarea id="mod-note" rows="3" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="closeModifica()" style="flex:1;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#f0f4f8;cursor:pointer;font-size:14px;">Annulla</button>
+      <button onclick="salvaModifica()" style="flex:1;padding:12px;border:none;border-radius:8px;background:#1a3a5c;color:#fff;cursor:pointer;font-size:14px;font-weight:700;">Salva modifiche</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let modificaId = null;
+
+async function apriModificaTimbratura(id) {
+  try {
+    const doc = await _getDb().collection('timbrature').doc(id).get();
+    if (!doc.exists) { alert('Timbratura non trovata'); return; }
+    const t = { id: doc.id, ...doc.data() };
+    modificaId = id;
+    document.getElementById('modifica-info').innerHTML =
+      '<strong>' + t.minore + '</strong> — ' + formatData(t.data) + ' — ' + (t.educatoreNome || '') +
+      '<br><span style="font-size:11px;color:#888;">GPS entrata: ' + (t.gpsEntrata || '<em>non registrato</em>') + '</span>';
+    document.getElementById('mod-entrata').value = t.entrata || '';
+    document.getElementById('mod-uscita').value = t.uscita || '';
+    document.getElementById('mod-note').value = t.note || '';
+    document.getElementById('modal-modifica').style.display = 'flex';
+  } catch(err) {
+    alert('Errore: ' + err.message);
+  }
+}
+
+function closeModifica() {
+  document.getElementById('modal-modifica').style.display = 'none';
+  modificaId = null;
+}
+
+async function salvaModifica() {
+  if (!modificaId) return;
+  const entrata = document.getElementById('mod-entrata').value;
+  const uscita = document.getElementById('mod-uscita').value;
+  const note = document.getElementById('mod-note').value;
+  if (!entrata) { alert('Inserisci almeno l\'orario di entrata'); return; }
+  try {
+    // Aggiorna SOLO entrata, uscita e note — GPS e coordinate non vengono toccati
+    await _getDb().collection('timbrature').doc(modificaId).update({
+      entrata,
+      uscita: uscita || '',
+      note,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: 'coordinatore'
+    });
+    closeModifica();
+    toast('Timbratura aggiornata ✓');
+    aggiornaDash();
+  } catch(err) {
+    alert('Errore salvataggio: ' + err.message);
+  }
+}
+
+async function eliminaTimbratura(id, minore, data) {
+  if (!confirm('Eliminare la timbratura di ' + minore + ' del ' + formatData(data) + '?')) return;
+  try {
+    await _getDb().collection('timbrature').doc(id).delete();
+    toast('Timbratura eliminata');
+    aggiornaDash();
+  } catch(err) {
+    alert('Errore: ' + err.message);
+  }
+}
+
+// ── RIEPILOGO MENSILE GLOBALE ──
+
+async function esportaZipSingoli() {
+  const mese = document.getElementById('f-mese').value;
+  if (!mese) { toast('Seleziona prima un mese nel filtro'); return; }
+
+  try {
+    toast('Preparazione zip in corso…');
+    const timb = await syncGetTutteTimbrature(mese);
+    if (!timb.length) { toast('Nessuna timbratura per questo mese'); return; }
+
+    const [anno, mm] = mese.split('-');
+    const nm = nomiMesi();
+    const nomeMese = nm[parseInt(mm)];
+    const zip = new JSZip();
+
+    // Raggruppa per educatore → minore
+    const perEdu = {};
+    timb.forEach(function(t) {
+      if (!perEdu[t.educatoreId]) perEdu[t.educatoreId] = { nome: t.educatoreNome || 'Sconosciuto', timb: [] };
+      perEdu[t.educatoreId].timb.push(t);
+    });
+
+    Object.values(perEdu).forEach(function(e) {
+      // Sottocartella per educatore (cognome)
+      var cartellaEdu = e.nome.split(' ')[0];
+
+      const perMin = {};
+      e.timb.forEach(function(t) {
+        const k = t.minore + '||' + t.scuola;
+        if (!perMin[k]) perMin[k] = { minore: t.minore, scuola: t.scuola, comune: t.comune || '', timb: [] };
+        perMin[k].timb.push(t);
+      });
+
+      Object.values(perMin).forEach(function(g) {
+        var wb = XLSX.utils.book_new();
+        var righe = costruisciRighe(g, nomeMese, anno, mm, e.nome);
+        var ws = XLSX.utils.aoa_to_sheet(righe);
+        ws['!cols'] = [{wch:8},{wch:8},{wch:8},{wch:10},{wch:32},{wch:28},{wch:28}];
+        XLSX.utils.book_append_sheet(wb, ws, g.minore.slice(0, 31));
+
+        // Converti in array binario
+        var wbData = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+
+        // Cognome minore come nome file
+        var cognomeMin = g.minore.split(' ')[0];
+        var nomeFile = cartellaEdu + '/' + cognomeMin + '_' + nomeMese + '_' + anno + '.xlsx';
+        zip.file(nomeFile, wbData);
+      });
+    });
+
+    // Genera e scarica zip
+    var blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'Presenze_' + nomeMese + '_' + anno + '.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Zip scaricato ✓');
+
+  } catch(err) {
+    alert('Errore: ' + err.message);
+    console.error('esportaZipSingoli error:', err);
+  }
+}
+
+async function esportaRiepilogoMensile() {
+  const mese = document.getElementById('f-mese').value;
+  if (!mese) { toast('Seleziona prima un mese nel filtro'); return; }
+
+  const timb = await syncGetTutteTimbrature(mese);
+  if (!timb.length) { toast('Nessuna timbratura per questo mese'); return; }
+
+  const parti = mese.split('-');
+  const anno = parti[0];
+  const mm = parseInt(parti[1]);
+  const nm = nomiMesi();
+  const nomeMese = nm[mm];
+  const giorniMese = new Date(parseInt(anno), mm, 0).getDate();
+  const nomiGiorni = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+
+  const wb = XLSX.utils.book_new();
+
+  // Raggruppa timbrature per educatore
+  const perEdu = {};
+  timb.forEach(function(t) {
+    if (!perEdu[t.educatoreId]) perEdu[t.educatoreId] = { nome: t.educatoreNome || '—', timb: [] };
+    perEdu[t.educatoreId].timb.push(t);
+  });
+
+  Object.values(perEdu).forEach(function(e) {
+    // Trova tutti i minori seguiti da questo educatore (colonne)
+    const minoriSet = {};
+    e.timb.forEach(function(t) {
+      var chiave = t.minore + '||' + t.scuola;
+      if (!minoriSet[chiave]) minoriSet[chiave] = { minore: t.minore, scuola: t.scuola };
+    });
+    const minori = Object.values(minoriSet).sort(function(a,b){ return a.minore.localeCompare(b.minore); });
+
+    // Intestazione
+    var righe = [];
+    righe.push(['Il Filo di Arianna — Riepilogo mensile', '', '', '']);
+    righe.push(['Educatore: ' + e.nome + '   Mese: ' + nomeMese + ' ' + anno, '', '', '']);
+    righe.push(['']);
+
+    // Riga intestazione colonne: Giorno + un gruppo per ogni minore
+    var intestazione = ['Giorno'];
+    var sottointestazione = [''];
+    minori.forEach(function(m) {
+      intestazione.push(m.minore + ' — ' + m.scuola);
+      intestazione.push(''); // merge visivo
+      intestazione.push('');
+      sottointestazione.push('Entrata');
+      sottointestazione.push('Uscita');
+      sottointestazione.push('Ore');
+    });
+    righe.push(intestazione);
+    righe.push(sottointestazione);
+
+    // Una riga per ogni giorno del mese
+    var totaliPerMinore = {};
+    minori.forEach(function(m) { totaliPerMinore[m.minore + '||' + m.scuola] = 0; });
+
+    for (var gg = 1; gg <= giorniMese; gg++) {
+      var dataStr = anno + '-' + String(mm).padStart(2,'0') + '-' + String(gg).padStart(2,'0');
+      var dataObj = new Date(parseInt(anno), mm - 1, gg);
+      var nomeGiorno = nomiGiorni[dataObj.getDay()];
+      var riga = [gg + ' ' + nomeGiorno];
+
+      minori.forEach(function(m) {
+        var chiave = m.minore + '||' + m.scuola;
+        // Trova timbrature di questo minore in questo giorno, ordinate per entrata
+        var timbGiorno = e.timb
+          .filter(function(t) { return t.data === dataStr && t.minore === m.minore && t.scuola === m.scuola; })
+          .sort(function(a,b) { return (a.entrata||'').localeCompare(b.entrata||''); });
+
+        if (timbGiorno.length) {
+          // Se ci sono più timbrature nello stesso giorno (raro ma possibile), prende la prima
+          var t = timbGiorno[0];
+          var ore = calcolaOre(t.entrata, t.uscita);
+          riga.push(t.entrata || '');
+          riga.push(t.uscita || '');
+          riga.push(ore !== null ? parseFloat(ore.toFixed(2)) : '');
+          if (ore) totaliPerMinore[chiave] += ore;
+        } else {
+          riga.push('', '', '');
+        }
+      });
+      righe.push(riga);
+    }
+
+    // Riga totali
+    righe.push(['']);
+    var rigaTotali = ['TOTALE ORE'];
+    minori.forEach(function(m) {
+      var chiave = m.minore + '||' + m.scuola;
+      var tot = totaliPerMinore[chiave];
+      rigaTotali.push('');
+      rigaTotali.push('');
+      rigaTotali.push(parseFloat(tot.toFixed(2)));
+    });
+    righe.push(rigaTotali);
+
+    // Totale generale
+    var totGen = Object.values(totaliPerMinore).reduce(function(s,v){return s+v;},0);
+    righe.push(['Totale generale: ' + totGen.toFixed(2) + 'h', '', '', '']);
+
+    // Larghezze colonne
+    var cols = [{wch:10}];
+    minori.forEach(function() { cols.push({wch:8},{wch:8},{wch:7}); });
+
+    var ws = XLSX.utils.aoa_to_sheet(righe);
+    ws['!cols'] = cols;
+    var nomeSheet = e.nome.slice(0, 31);
+    XLSX.utils.book_append_sheet(wb, ws, nomeSheet);
+  });
+
+  XLSX.writeFile(wb, 'Riepilogo_' + nomeMese + '_' + anno + '_TuttiEducatori.xlsx');
+  toast('Riepilogo scaricato ✓');
+}
+
+// Registra Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw-dashboard.js').catch(() => {});
+}
+</script>
+</body>
+</html>
