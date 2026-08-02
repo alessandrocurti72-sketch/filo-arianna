@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a3a5c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Filo Presenze">
+<title>Il Filo di Arianna – Presenze</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+:root {
+  --bg: #f0f4f8;
+  --surface: #ffffff;
+  --primary: #1a3a5c;
+  --primary-d: #0f2540;
+  --primary-l: #e8f0f8;
+  --accent: #e07b10;
+  --danger: #b52b2b;
+  --success: #1a7040;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e2e8f0;
+  --r: 12px;
+  --rs: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overscroll-behavior: none; }
+
+/* header */
+.hdr { background: var(--primary); color: #fff; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.hdr-logo { font-size: 13px; font-weight: 600; line-height: 1.4; }
+.hdr-logo span { display: block; font-size: 11px; font-weight: 400; opacity: 0.7; }
+.hdr-right { text-align: right; font-size: 11px; opacity: 0.8; line-height: 1.5; }
+
+/* nav */
+.bnav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+.nb { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 9px 4px; gap: 3px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 10px; transition: color .15s; }
+.nb.on { color: var(--primary); }
+.nb svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* pages */
+.pg { display: none; padding: 14px 14px 86px; }
+.pg.on { display: block; }
+
+/* cards */
+.card { background: var(--surface); border-radius: var(--r); padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
+.card-hd { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); margin-bottom: 12px; }
+
+/* section header */
+.sh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.sh-t { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+
+/* intervento list item */
+.ii { display: flex; align-items: center; padding: 13px 14px; background: var(--surface); border-radius: var(--r); border: 2px solid transparent; margin-bottom: 9px; cursor: pointer; gap: 12px; transition: border-color .15s, transform .1s; }
+.ii:active { transform: scale(0.98); }
+.ii.sel { border-color: var(--primary); }
+.av { width: 42px; height: 42px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0; }
+.ii-info { flex: 1; min-width: 0; }
+.ii-nome { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ii-sub { font-size: 11px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bdg { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+.bdg-in { background: #d1fae5; color: #065f46; }
+.bdg-out { background: var(--bg); color: var(--muted); }
+
+/* pannello timbratura */
+.tpanel { background: var(--surface); border-radius: var(--r); padding: 18px; border: 1px solid var(--border); margin-bottom: 12px; display: none; }
+.tpanel.on { display: block; }
+.tp-nome { font-weight: 700; font-size: 17px; }
+.tp-sub { font-size: 12px; color: var(--muted); margin-bottom: 18px; margin-top: 2px; }
+
+.orari { display: flex; gap: 10px; margin-bottom: 18px; }
+.obox { flex: 1; border: 1px solid var(--border); border-radius: var(--rs); padding: 10px; text-align: center; }
+.obox-l { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+.obox-v { font-size: 20px; font-weight: 700; margin-top: 3px; color: var(--primary); font-variant-numeric: tabular-nums; }
+.obox-v.vuoto { color: var(--border); }
+
+.bt { width: 100%; padding: 15px; border: none; border-radius: var(--r); font-size: 15px; font-weight: 700; cursor: pointer; letter-spacing: .2px; transition: transform .1s, opacity .15s; }
+.bt:active { transform: scale(0.97); }
+.bt:disabled { opacity: .35; cursor: default; }
+.bt:disabled:active { transform: none; }
+.bt-in { background: var(--success); color: #fff; }
+.bt-out { background: var(--danger); color: #fff; margin-top: 9px; }
+.bt-save { background: var(--accent); color: #fff; margin-top: 14px; }
+.bt-pri { background: var(--primary); color: #fff; }
+.bt-sec { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+.bt-blk { width: 100%; }
+
+/* campi extra */
+.fld { margin-top: 14px; }
+.fld-l { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 5px; }
+textarea, input[type=text], input[type=month], input[type=password], select {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--rs);
+  font-size: 14px; font-family: inherit; color: var(--text); background: #fff;
+}
+textarea { resize: vertical; min-height: 72px; }
+textarea:focus, input:focus, select:focus { outline: 2px solid var(--primary); border-color: transparent; }
+
+/* gps */
+.gps-row { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--rs); font-size: 12px; color: var(--muted); }
+.gdot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; transition: background .3s; }
+.gdot.ok { background: var(--success); }
+.gdot.wait { background: var(--accent); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+
+
+/* storico */
+.si { padding: 12px; border-bottom: 1px solid var(--border); }
+.si:last-child { border-bottom: none; }
+.si-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+.si-nome { font-weight: 600; font-size: 13px; }
+.si-data { font-size: 11px; color: var(--muted); }
+.si-det { font-size: 12px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+.si-ore { font-weight: 700; color: var(--primary); }
+
+/* empty state */
+.empty { text-align: center; padding: 36px 20px; color: var(--muted); }
+.empty svg { width: 40px; height: 40px; stroke: var(--border); fill: none; stroke-width: 1.5; display: block; margin: 0 auto 10px; }
+.empty p { font-size: 13px; line-height: 1.6; }
+
+/* toast */
+.toast { position: fixed; bottom: 74px; left: 50%; transform: translateX(-50%) translateY(16px); background: #1a1a2e; color: #fff; padding: 9px 18px; border-radius: 30px; font-size: 12px; font-weight: 500; opacity: 0; transition: opacity .25s, transform .25s; z-index: 999; white-space: nowrap; pointer-events: none; }
+.toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* modal */
+.ov { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+.ov.on { display: flex; }
+.modal { background: var(--surface); border-radius: var(--r) var(--r) 0 0; padding: 22px 18px calc(22px + env(safe-area-inset-bottom)); width: 100%; max-width: 480px; }
+.modal-t { font-size: 16px; font-weight: 700; margin-bottom: 18px; }
+.fg { margin-bottom: 12px; }
+
+/* fab */
+.fab { position: fixed; bottom: 70px; right: 16px; width: 50px; height: 50px; background: var(--primary); color: #fff; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(26,58,92,.35); z-index: 99; transition: transform .12s; }
+.fab:active { transform: scale(0.9); }
+.fab svg { width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* login screen */
+.login-wrap { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: var(--primary); }
+.login-logo { color: #fff; text-align: center; margin-bottom: 32px; }
+.login-logo h1 { font-size: 20px; font-weight: 700; }
+.login-logo p { font-size: 13px; opacity: .7; margin-top: 4px; }
+.login-card { background: #fff; border-radius: var(--r); padding: 24px; width: 100%; max-width: 340px; }
+.login-card h2 { font-size: 15px; font-weight: 700; margin-bottom: 18px; color: var(--text); }
+.edu-btn { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--rs); cursor: pointer; margin-bottom: 8px; transition: background .15s; }
+.edu-btn:hover { background: var(--primary-l); }
+.edu-btn-nome { font-size: 14px; font-weight: 600; text-align: left; }
+.pin-wrap { margin-top: 16px; }
+.pin-inp { font-size: 24px; letter-spacing: 8px; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* util */
+.row2 { display: flex; gap: 10px; }
+.row2 > * { flex: 1; }
+.mt8 { margin-top: 8px; }
+.mt12 { margin-top: 12px; }
+.mt16 { margin-top: 16px; }
+
+/* ── DIARIO DI BORDO ── */
+.bdg-area { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700; }
+.bdg-area.scol { background:#dbeafe; color:#1e40af; }
+.bdg-area.dom  { background:#d1fae5; color:#065f46; }
+.diario-item { display:flex; align-items:center; padding:13px 14px; background:var(--surface); border-radius:var(--r); border:1px solid var(--border); margin-bottom:9px; cursor:pointer; gap:12px; transition:border-color .15s; }
+.diario-item:active { transform:scale(0.98); }
+.av-sm { width:32px; height:32px; border-radius:50%; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex-shrink:0; }
+.nota-card { background:var(--surface); border-radius:var(--r); border:1px solid var(--border); padding:16px; margin-bottom:12px; }
+.nota-card.nota-urgente { border-left:4px solid var(--danger); }
+.nota-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+.nota-autore-wrap { display:flex; align-items:center; gap:10px; }
+.nota-autore { font-weight:700; font-size:13px; }
+.nota-data { font-size:11px; color:var(--muted); }
+.nota-blocco { margin-bottom:10px; }
+.nota-blocco-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); margin-bottom:3px; }
+.nota-blocco-testo { font-size:13px; line-height:1.5; color:var(--text); }
+.nota-blocco-domanda { background:#fef3c7; border-radius:var(--rs); padding:10px; }
+.nota-blocco-domanda .nota-blocco-label { color:#92400e; }
+.badge-urgente { display:inline-block; padding:2px 8px; border-radius:12px; font-size:10px; font-weight:700; background:#fee2e2; color:#991b1b; }
+.badge-domanda { display:inline-block; padding:2px 8px; border-radius:12px; font-size:10px; font-weight:700; background:#fef3c7; color:#92400e; }
+.nota-visto { font-size:11px; color:var(--muted); margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
+.commenti-wrap { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+.commento-item { padding:8px 10px; background:var(--bg); border-radius:var(--rs); margin-bottom:6px; }
+.commento-autore { font-size:11px; font-weight:700; color:var(--primary); margin-bottom:2px; }
+.commento-testo { font-size:13px; }
+.bt-commenta { background:none; border:1px dashed var(--border); border-radius:var(--rs); width:100%; padding:8px; font-size:12px; color:var(--muted); cursor:pointer; margin-top:10px; }
+.form-commento { margin-top:10px; }
+.bacheca-item { padding:14px; background:var(--surface); border-radius:var(--r); border:1px solid var(--border); margin-bottom:10px; cursor:pointer; }
+.bacheca-item:active { transform:scale(0.98); }
+.bach-urgente { border-left:4px solid var(--danger); }
+.bach-domanda { border-left:4px solid var(--accent); }
+.char-count { font-size:11px; color:var(--muted); text-align:right; margin-top:2px; }
+.nav-badge { position:absolute; top:4px; right:calc(50% - 18px); background:var(--danger); color:#fff; border-radius:10px; min-width:16px; height:16px; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 4px; }
+.cerca-wrap { position:relative; margin-bottom:12px; }
+.cerca-wrap input { padding-left:34px; }
+.cerca-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); width:16px; height:16px; stroke:var(--muted); fill:none; stroke-width:2; stroke-linecap:round; }
+.filtri-area { display:flex; gap:6px; margin-bottom:12px; overflow-x:auto; padding-bottom:2px; }
+.filtro-btn { padding:6px 14px; border-radius:20px; border:1px solid var(--border); background:var(--surface); font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; color:var(--muted); }
+.filtro-btn.on { background:var(--primary); color:#fff; border-color:var(--primary); }
+.det-hdr { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+.det-hdr-back { background:none; border:none; cursor:pointer; padding:6px; color:var(--primary); }
+.det-hdr-info { flex:1; }
+.det-hdr-nome { font-size:17px; font-weight:700; }
+.det-hdr-sub { font-size:11px; color:var(--muted); margin-top:1px; }
+.det-hdr-ref { font-size:11px; color:var(--accent); margin-top:2px; }
+.notifica-collega-item { background:#fff5f5; border:1px solid #fca5a5; border-left:4px solid #b52b2b; border-radius:var(--r); padding:12px; margin-bottom:8px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="login-wrap">
+  <div class="login-logo">
+    <img src="icons/icon-192.png" alt="logo" style="width:90px;height:90px;border-radius:50%;object-fit:cover;background:white;margin-bottom:12px;">
+    <h1>Il Filo di Arianna</h1>
+    <p>Foglio Presenze Digitale</p>
+  </div>
+  <div class="login-card">
+    <h2 id="login-step1-title">Seleziona il tuo profilo</h2>
+    <div id="edu-list"></div>
+    <div id="pin-step" style="display:none;">
+      <div class="pin-wrap">
+        <div class="fld-l">PIN (4 cifre)</div>
+        <input type="password" inputmode="numeric" maxlength="4" class="pin-inp" id="pin-input" placeholder="••••" oninput="checkPin()">
+      </div>
+      <p id="pin-error" style="color:#b52b2b;font-size:12px;margin-top:6px;display:none;">PIN errato. Riprova.</p>
+      <button class="bt bt-sec mt12" onclick="backToList()" style="padding:10px;">← Indietro</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP (nascosta finché non loggato) -->
+<div id="app" style="display:none;">
+
+  <header class="hdr">
+    <div class="hdr-logo" style="display:flex;align-items:center;gap:10px;">
+      <img src="icons/icon-192.png" alt="logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:white;">
+      <div>Il Filo di Arianna<span>Foglio Presenze</span></div>
+    </div>
+    <div class="hdr-right">
+      <span id="hdr-edu-nome" style="font-weight:600;font-size:12px;"></span><br>
+      <span id="hdr-date"></span>
+    </div>
+  </header>
+
+  <!-- PAGINA TIMBRA -->
+  <div class="pg on" id="pg-timbra">
+    <div class="sh" style="display:flex;justify-content:space-between;align-items:center;">
+      <span class="sh-t">I tuoi interventi</span>
+      <button onclick="aggiornaDatiApp()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:var(--muted);">↻ Aggiorna</button>
+    </div>
+    <div id="lista-interventi"></div>
+
+    <div class="tpanel" id="tpanel">
+      <div class="tp-nome" id="tp-nome">—</div>
+      <div class="tp-sub" id="tp-sub">—</div>
+
+      <div class="orari">
+        <div class="obox">
+          <div class="obox-l">Entrata</div>
+          <div class="obox-v vuoto" id="disp-in">--:--</div>
+        </div>
+        <div class="obox">
+          <div class="obox-l">Uscita</div>
+          <div class="obox-v vuoto" id="disp-out">--:--</div>
+        </div>
+      </div>
+
+      <button class="bt bt-in" id="btn-in" onclick="timbraEntrata()">▶ TIMBRA ENTRATA</button>
+      <button class="bt bt-out" id="btn-out" onclick="timbraUscita()">■ TIMBRA USCITA</button>
+
+      <div class="fld">
+        <div class="fld-l">Note</div>
+        <textarea id="note-inp" placeholder="Annotazioni sull'intervento…"></textarea>
+      </div>
+      <button class="bt bt-save" onclick="salvaIntervento()">
+        ✓ SALVA INTERVENTO
+      </button>
+    </div>
+  </div>
+
+  <!-- VISTA DETTAGLIO DIARIO SERVIZIO -->
+  <div id="diario-servizio-view" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:50;overflow-y:auto;padding-bottom:80px;">
+    <div class="det-hdr">
+      <button class="det-hdr-back" onclick="tornaListaServizi()">
+        <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="det-hdr-info">
+        <div class="det-hdr-nome" id="ds-titolo"></div>
+        <div class="det-hdr-sub" id="ds-sub"></div>
+      </div>
+    </div>
+    <div style="padding:12px;">
+      <!-- Nuova nota -->
+      <div class="card" id="ds-form-nota">
+        <div class="card-hd">Nuova nota</div>
+        <textarea id="ds-testo" maxlength="300" rows="3"
+          style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--rs);font-size:14px;font-family:inherit;resize:none;"
+          placeholder="Scrivi una nota (max 300 caratteri)…" oninput="aggiornaContatore()"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="ds-urgente"> ⚠ Urgente
+          </label>
+          <span id="ds-contatore" style="font-size:11px;color:var(--muted);">0/300</span>
+        </div>
+        <button class="bt bt-pri bt-blk mt8" onclick="salvaNotaServizio()">+ Aggiungi nota</button>
+      </div>
+      <!-- Lista note -->
+      <div id="ds-note-lista"></div>
+    </div>
+  </div>
+
+  <!-- PAGINA ORE AGGIUNTIVE -->
+  <div class="pg" id="pg-ore_agg">
+
+    <!-- Tab Registra / Richieste -->
+    <div style="display:flex;border-bottom:2px solid var(--border);margin-bottom:12px;">
+      <button id="tab-oa-registra" onclick="setOreAggTab('registra')"
+        style="flex:1;padding:10px;border:none;background:none;font-size:13px;font-weight:700;color:var(--primary);border-bottom:2px solid var(--primary);margin-bottom:-2px;cursor:pointer;">
+        Registra
+      </button>
+      <button id="tab-oa-richieste" onclick="setOreAggTab('richieste')"
+        style="flex:1;padding:10px;border:none;background:none;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;">
+        Richieste <span id="badge-richieste" style="display:none;background:#c47a2e;color:white;border-radius:50%;font-size:10px;padding:1px 5px;margin-left:3px;"></span>
+      </button>
+    </div>
+
+    <!-- Pannello Registra -->
+    <div id="oa-panel-registra">
+      <div class="card">
+        <div class="card-hd">Aggiungi voce</div>
+        <div class="fg">
+          <div class="fld-l">Data</div>
+          <input type="date" id="oa-data" onchange="aggiornaOreAgg()">
+        </div>
+        <div class="fg">
+          <div class="fld-l">Tipologia</div>
+          <select id="oa-categoria" onchange="aggiornaOreAgg()">
+            <option value="malattia">🤒 Malattia</option>
+            <option value="ferie">🏖 Ferie</option>
+            <option value="permesso">🕐 Permesso</option>
+            <option value="ore_extra">⏱ Ore Extra</option>
+          </select>
+        </div>
+        <div id="oa-ore-auto" style="padding:6px 0 2px;font-size:13px;"></div>
+        <div id="oa-ore-manuali-wrap" style="display:none;">
+          <div class="fg">
+            <div class="fld-l">Ore</div>
+            <input type="number" id="oa-ore-manuali" min="0.5" max="12" step="0.5" placeholder="Es. 2.5">
+          </div>
+        </div>
+        <div class="fg">
+          <div class="fld-l">Note</div>
+          <input type="text" id="oa-note" placeholder="Es. permesso retribuito, formazione, supervisione…">
+        </div>
+        <button class="bt bt-pri bt-blk mt8" onclick="salvaOraAggiuntiva()">+ Aggiungi</button>
+      </div>
+      <div class="card">
+        <div class="card-hd" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Riepilogo mese</span>
+          <select id="oa-mese-filtro" onchange="caricaOreAggMese()" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;"></select>
+        </div>
+        <div id="oa-lista"></div>
+        <div id="oa-totale" style="font-size:14px;font-weight:700;padding:10px 0;border-top:1px solid var(--border);margin-top:6px;"></div>
+      </div>
+    </div>
+
+    <!-- Pannello Richieste -->
+    <div id="oa-panel-richieste" style="display:none;">
+      <div class="card">
+        <div class="card-hd">Nuova richiesta</div>
+        <div class="fg">
+          <div class="fld-l">Tipologia</div>
+          <select id="rich-tipo" onchange="aggiornaFormRichiesta()">
+            <option value="ferie">🏖 Ferie</option>
+            <option value="permesso">🕐 Permesso</option>
+            <option value="altra_assenza">📋 Altra assenza</option>
+          </select>
+        </div>
+        <div class="fg">
+          <div class="fld-l">Data inizio</div>
+          <input type="date" id="rich-dal">
+        </div>
+        <div class="fg">
+          <div class="fld-l">Data fine (lascia vuota per giorno singolo)</div>
+          <input type="date" id="rich-al">
+        </div>
+        <!-- Orario parziale solo per permesso -->
+        <div id="rich-ore-wrap" style="display:none;">
+          <div class="fg">
+            <div class="fld-l">Dalle</div>
+            <input type="time" id="rich-dalle" oninput="calcolaOreDalleAlle()">
+          </div>
+          <div class="fg">
+            <div class="fld-l">Alle</div>
+            <input type="time" id="rich-alle" oninput="calcolaOreDalleAlle()">
+          </div>
+          <div id="rich-ore-calc" style="font-size:12px;color:var(--muted);padding:2px 0 6px;"></div>
+        </div>
+        <div class="fg">
+          <div class="fld-l">Note / Motivazione</div>
+          <input type="text" id="rich-note" placeholder="Es. vacanze estive, visita medica…">
+        </div>
+        <button class="bt bt-pri bt-blk mt8" onclick="inviaRichiesta()">📤 Invia richiesta</button>
+      </div>
+      <!-- Lista richieste educatore -->
+      <div class="card">
+        <div class="card-hd">Le mie richieste</div>
+        <div id="rich-lista"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PAGINA STORICO -->
+  <div class="pg" id="pg-storico">
+    <div class="sh">
+      <span class="sh-t">Storico</span>
+      <input type="month" id="fil-mese" style="width:auto;padding:6px 10px;font-size:13px;" onchange="renderStorico()">
+    </div>
+    <div class="card" id="storico-wrap"></div>
+  </div>
+
+  <!-- PAGINA EXPORT -->
+  <div class="pg" id="pg-export">
+    <div class="card">
+      <div class="card-hd">Foglio presenze e validazione</div>
+      <div class="fg">
+        <div class="fld-l">Mese</div>
+        <input type="month" id="exp-mese" onchange="renderRiepilogo()">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="bt bt-pri" style="flex:1;" onclick="esportaXlsx()">↓ Scarica .xlsx</button>
+        <button class="bt bt-sec" style="flex:1;" onclick="esportaPDF()">↓ Scarica PDF</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Riepilogo mese</div>
+      <div id="riepilogo"></div>
+    </div>
+    <div class="card" id="card-qr-list" style="display:none;">
+      <div class="card-hd">Genera QR per validazione referente</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Mostra il QR al referente scolastico o familiare. Il referente firma dal suo telefono e il foglio validato viene salvato nella dashboard.</p>
+      <div id="qr-minori-list"></div>
+    </div>
+  </div>
+
+  <!-- PAGINA IMPOSTAZIONI -->
+  <div class="pg" id="pg-settings">
+    <div class="card">
+      <div class="card-hd">Profilo</div>
+      <div style="font-size:14px;">Connesso come: <strong id="s-nome-edu"></strong></div>
+      <div id="preferito-status" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
+      <button class="bt bt-pri bt-blk mt12" id="btn-preferito" onclick="impostaPreferito()" style="padding:10px 14px;font-size:13px;">⭐ Imposta come profilo predefinito su questo dispositivo</button>
+      <button class="bt bt-sec bt-blk mt8" onclick="logout()" style="padding:10px 14px;font-size:13px;">Esci (cambia educatore)</button>
+    </div>
+    <div class="card">
+      <div class="card-hd">Dati</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Se hai modificato minori o interventi dal database e non vedi le modifiche, aggiorna i dati.</p>
+      <button class="bt bt-sec bt-blk" onclick="aggiornaDatiApp()" style="padding:10px 14px;font-size:13px;">↻ Aggiorna dati</button>
+      <div id="aggiorna-status" style="font-size:12px;color:var(--muted);margin-top:8px;"></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">I miei interventi</div>
+      <div id="s-int-lista"></div>
+      <button class="bt bt-sec bt-blk mt12" onclick="openModal('modal-int')" style="padding:10px;">+ Aggiungi intervento</button>
+    </div>
+  </div>
+
+  <!-- PAGINA DIARIO DI BORDO -->
+  <div class="pg" id="pg-diario">
+
+    <!-- VISTA: LISTA -->
+    <div id="diario-lista-view">
+      <!-- Tab Minori / Servizi -->
+      <div style="display:flex;border-bottom:2px solid var(--border);margin-bottom:12px;">
+        <button id="tab-minori" onclick="setDiarioTab('minori')"
+          style="flex:1;padding:10px;border:none;background:none;font-size:13px;font-weight:700;color:var(--primary);border-bottom:2px solid var(--primary);margin-bottom:-2px;cursor:pointer;">
+          Minori
+        </button>
+        <button id="tab-servizi" onclick="setDiarioTab('servizi')"
+          style="flex:1;padding:10px;border:none;background:none;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;">
+          Servizi <span id="badge-tab-servizi" style="display:none;background:#c47a2e;color:white;border-radius:50%;font-size:10px;padding:1px 5px;margin-left:4px;"></span>
+        </button>
+      </div>
+
+      <!-- Pannello Minori -->
+      <div id="diario-tab-minori">
+        <div class="cerca-wrap">
+          <svg class="cerca-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="diario-cerca" placeholder="Cerca minore…" oninput="renderListaMinori()">
+        </div>
+        <div class="filtri-area">
+          <button class="filtro-btn on" onclick="setFiltroArea('tutti',this)">Tutti</button>
+          <button class="filtro-btn" onclick="setFiltroArea('scolastico',this)">Scolastico</button>
+          <button class="filtro-btn" onclick="setFiltroArea('domiciliare',this)">Extrascolastico</button>
+        </div>
+        <div id="diario-lista-minori"></div>
+      </div>
+
+      <!-- Pannello Servizi -->
+      <div id="diario-tab-servizi" style="display:none;">
+        <div id="diario-lista-servizi"></div>
+      </div>
+    </div>
+
+    <!-- VISTA: DETTAGLIO MINORE + NOTE -->
+    <div id="diario-dettaglio-view" style="display:none;">
+      <div class="det-hdr">
+        <button class="det-hdr-back" onclick="tornaDiarioLista()">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="det-hdr-info">
+          <div class="det-hdr-nome" id="diario-det-nome">—</div>
+          <div class="det-hdr-sub" id="diario-det-sub">—</div>
+          <div class="det-hdr-ref" id="diario-det-ref"></div>
+        </div>
+      </div>
+      <button class="bt bt-pri bt-blk" style="margin-bottom:16px;" onclick="apriFormNuovaNota()">+ Nuova nota</button>
+      <div id="diario-notifiche-collega" style="display:none;margin-bottom:12px;"></div>
+      <div id="diario-note-lista"></div>
+    </div>
+
+    <!-- VISTA: FORM NUOVA NOTA -->
+    <div id="diario-form-view" style="display:none;">
+      <div class="det-hdr">
+        <button class="det-hdr-back" onclick="tornaDettTaglio()">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="det-hdr-info">
+          <div class="det-hdr-nome">Nuova nota</div>
+          <div class="det-hdr-sub" id="form-nota-nome-minore"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="fg">
+          <div class="fld-l">Cosa è successo <span style="color:var(--muted);font-weight:400;">(scostamento dalla norma)</span></div>
+          <textarea id="fn-cosa" maxlength="300" rows="3" placeholder="Descrivi l'avvenimento significativo…" oninput="aggiornaContatore('fn-cosa','cnt-cosa',300)"></textarea>
+          <div class="char-count" id="cnt-cosa">0/300</div>
+        </div>
+        <div class="fg">
+          <div class="fld-l">Stato emotivo e retroazioni</div>
+          <textarea id="fn-stato" maxlength="200" rows="3" placeholder="Come stava, come ha reagito…" oninput="aggiornaContatore('fn-stato','cnt-stato',200)"></textarea>
+          <div class="char-count" id="cnt-stato">0/200</div>
+        </div>
+        <div class="fg">
+          <div class="fld-l">Contesto relazionale</div>
+          <textarea id="fn-contesto" maxlength="200" rows="2" placeholder="Chi era presente, quali soggetti della rete erano coinvolti…" oninput="aggiornaContatore('fn-contesto','cnt-contesto',200)"></textarea>
+          <div class="char-count" id="cnt-contesto">0/200</div>
+        </div>
+        <div class="fg">
+          <div class="fld-l" style="color:#92400e;">❓ Domanda ai coordinatori <span style="font-weight:400;">(opzionale — invia notifica)</span></div>
+          <textarea id="fn-domanda" maxlength="200" rows="2" placeholder="Scrivi qui se hai bisogno di un confronto…" oninput="aggiornaContatore('fn-domanda','cnt-domanda',200)"></textarea>
+          <div class="char-count" id="cnt-domanda">0/200</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--border);margin-top:4px;">
+          <input type="checkbox" id="fn-urgente" style="width:18px;height:18px;cursor:pointer;">
+          <label for="fn-urgente" style="font-size:13px;font-weight:600;color:var(--danger);cursor:pointer;">⚠ Segnala come urgente (invia notifica ai coordinatori)</label>
+        </div>
+      </div>
+      <button class="bt bt-pri bt-blk" onclick="salvaNuovaNota()">✓ Salva nota</button>
+    </div>
+
+  </div>
+
+  <!-- PAGINA BACHECA URGENZE (solo coordinatori) -->
+  <div class="pg" id="pg-bacheca">
+    <div class="sh"><span class="sh-t">Urgenze e domande</span></div>
+    <div id="bacheca-lista"></div>
+  </div>
+
+  <!-- PAGINA ADMIN (solo coordinatore pedagogico) -->
+  <div class="pg" id="pg-admin">
+
+    <!-- VISTA: LISTA MINORI ADMIN -->
+    <div id="admin-lista-view">
+      <div class="card">
+        <div class="card-hd">Anagrafica minori</div>
+        <div id="admin-minori-lista"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button class="bt bt-pri" style="flex:1;" onclick="apriFormNuovoMinore()">+ Aggiungi</button>
+          <button class="bt bt-sec" style="flex:2;" id="btn-sincronizza" onclick="sincronizzaDaTimbrature()">↻ Sincronizza da timbrature</button>
+        </div>
+        <div id="sync-risultato" style="display:none;margin-top:12px;"></div>
+      </div>
+
+      <!-- GESTIONE SERVIZI -->
+      <div class="card">
+        <div class="card-hd">Gestione servizi</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Micronido, Doposcuola, Centro Estivo e altri servizi collettivi.</p>
+        <div id="admin-servizi-lista"></div>
+        <button class="bt bt-pri bt-blk mt8" onclick="apriFormNuovoServizio()">+ Nuovo servizio</button>
+      </div>
+
+      <!-- Sostituzioni (visibile anche a coord area) -->
+      <div class="card" id="card-sostituzioni" style="display:none;">
+        <div class="card-hd">Assegnazione educatori</div>
+        <div id="sost-lista"></div>
+      </div>
+    </div>
+
+    <!-- VISTA: FORM MINORE -->
+    <div id="admin-form-view" style="display:none;">
+      <div class="det-hdr">
+        <button class="det-hdr-back" onclick="tornaAdminLista()">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="det-hdr-info">
+          <div class="det-hdr-nome" id="admin-form-title">Nuovo minore</div>
+        </div>
+      </div>
+      <input type="hidden" id="admin-minore-id">
+      <div class="card">
+        <div class="fg"><div class="fld-l">Nome e cognome</div><input type="text" id="am-nome" placeholder="Es. Mario Rossi"></div>
+        <div class="fg"><div class="fld-l">Comune</div><input type="text" id="am-comune" placeholder="Es. Luino"></div>
+        <div class="fg"><div class="fld-l">Scuola di riferimento</div><input type="text" id="am-scuola" placeholder="Es. IC Luino"></div>
+        <div class="fg">
+          <div class="fld-l">Aree di intervento</div>
+          <select id="am-aree">
+            <option value="scolastico">Scolastico</option>
+            <option value="domiciliare">Domiciliare</option>
+            <option value="entrambe">Entrambe (scolastico + domiciliare)</option>
+          </select>
+        </div>
+        <div class="fg"><div class="fld-l">Educatore scolastico referente</div><select id="am-edu-scol"></select></div>
+        <div class="fg"><div class="fld-l">2° Educatore scolastico (se presente)</div><select id="am-edu-scol2"></select></div>
+        <div class="fg"><div class="fld-l">Educatore domiciliare referente</div><select id="am-edu-extra"></select></div>
+        <button class="bt bt-pri bt-blk mt12" onclick="salvaMinore()">✓ Salva</button>
+      </div>
+    </div>
+
+    <!-- VISTA: FORM SERVIZIO -->
+    <div id="admin-servizio-form-view" style="display:none;">
+      <div class="det-hdr">
+        <button class="det-hdr-back" onclick="tornaAdminLista()">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="det-hdr-info">
+          <div class="det-hdr-nome" id="servizio-form-title">Nuovo servizio</div>
+        </div>
+      </div>
+      <input type="hidden" id="servizio-id">
+      <div class="card">
+        <div class="fg">
+          <div class="fld-l">Tipo servizio</div>
+          <select id="sv-tipo">
+            <option value="micronido">Micronido</option>
+            <option value="doposcuola">Doposcuola</option>
+            <option value="centro_estivo">Centro Estivo</option>
+            <option value="altro">Altro</option>
+          </select>
+        </div>
+        <div class="fg"><div class="fld-l">Nome servizio</div><input type="text" id="sv-nome" placeholder="Es. Doposcuola Valganna"></div>
+        <div class="fg"><div class="fld-l">Comune</div><input type="text" id="sv-comune" placeholder="Es. Valganna"></div>
+        <div class="fg"><div class="fld-l">Sede / indirizzo (facoltativo)</div><input type="text" id="sv-sede" placeholder="Es. Via Roma 5"></div>
+        <div class="fg">
+          <div class="fld-l">Educatori assegnati</div>
+          <div id="sv-edu-lista" style="margin-top:6px;"></div>
+        </div>
+        <button class="bt bt-pri bt-blk mt12" onclick="salvaServizio()">✓ Salva</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" id="fab" onclick="openModal('modal-int')">
+    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bnav">
+    <button class="nb on" onclick="navTo('timbra',this)" data-page="timbra">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Timbra
+    </button>
+    <button class="nb" onclick="navTo('diario',this)" data-page="diario" id="nav-diario" style="position:relative;">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Diario
+    </button>
+    <button class="nb" id="nav-bacheca" onclick="navTo('bacheca',this)" data-page="bacheca" style="display:none;position:relative;">
+      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span id="badge-urgenze" style="display:none;" class="nav-badge">0</span>
+      Urgenze
+    </button>
+    <button class="nb" id="nav-admin" onclick="navTo('admin',this)" data-page="admin" style="display:none;">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Admin
+    </button>
+    <button class="nb" onclick="navTo('storico',this)" data-page="storico">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Storico
+    </button>
+    <button class="nb" onclick="navTo('ore_agg',this)" data-page="ore_agg" id="nav-ore-agg">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Ore+
+    </button>
+    <button class="nb" onclick="navTo('export',this)" data-page="export">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Esporta
+    </button>
+    <button class="nb" onclick="navTo('settings',this)" data-page="settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Impost.
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<!-- MODAL: aggiungi intervento -->
+<div class="ov" id="modal-int" onclick="handleOvClick(event,'modal-int')">
+  <div class="modal">
+    <div class="modal-t">Nuovo intervento</div>
+    <div class="fg">
+      <div class="fld-l">Tipo di intervento</div>
+      <select id="new-tipo" onchange="aggiornaFormIntervento(this.value)" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--rs);font-size:14px;">
+        <option value="scolastico">Scolastico (minore)</option>
+        <option value="domiciliare">Domiciliare (minore)</option>
+        <option value="micronido">Micronido (servizio)</option>
+        <option value="doposcuola">Doposcuola (servizio)</option>
+      </select>
+    </div>
+    <div id="form-minore-fields">
+      <div class="fg"><div class="fld-l">Nome minore</div><input type="text" id="new-minore" placeholder="Es. Mannino Andrea"></div>
+      <div class="fg"><div class="fld-l">Scuola / sede</div><input type="text" id="new-scuola" placeholder="Es. ITIS Galilei"></div>
+      <div class="fg"><div class="fld-l">Comune</div><input type="text" id="new-comune" placeholder="Es. Varese"></div>
+    </div>
+    <div id="form-servizio-fields" style="display:none;">
+      <div class="fg"><div class="fld-l">Sede / indirizzo</div><input type="text" id="new-sede" placeholder="Es. Via Roma 5, Varese"></div>
+    </div>
+    <div class="row2 mt8">
+      <button class="bt bt-sec" onclick="closeModal('modal-int')">Annulla</button>
+      <button class="bt bt-pri" onclick="aggiungiIntervento()">Aggiungi</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="qrcode.js"></script>
+<script src="logo_b64.js"></script>
+<script src="sync.js"></script>
+<script src="diario.js"></script>
+<script src="app.js"></script>
+
+<!-- Modal QR code -->
+<div class="ov" id="modal-qr" onclick="handleOvClick(event,'modal-qr')">
+  <div class="modal" style="border-radius:var(--r);margin:20px;max-width:360px;align-self:center;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div>
+        <div class="modal-t" style="margin-bottom:2px;" id="qr-titolo">QR Validazione</div>
+        <div style="font-size:12px;color:var(--muted);" id="qr-sottotitolo"></div>
+      </div>
+      <button onclick="closeModal('modal-qr')" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;">×</button>
+    </div>
+    <div id="qr-container" style="display:flex;justify-content:center;padding:16px;background:#f8f8f8;border-radius:8px;margin-bottom:12px;"></div>
+    <p style="font-size:12px;color:var(--muted);text-align:center;line-height:1.5;">Mostra questo schermo al referente.<br>Il referente inquadra il QR con il suo telefono e firma.</p>
+    <div id="qr-stato" style="margin-top:10px;font-size:13px;text-align:center;color:var(--success);display:none;">✓ Foglio validato e salvato</div>
+  </div>
+</div>
+</body>
+</html>

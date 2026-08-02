@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a3a5c">
+<title>Validazione Foglio Presenze – Il Filo di Arianna</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; color: #111827; min-height: 100vh; }
+
+.header { background: #1a3a5c; color: white; padding: 16px 20px; }
+.header h1 { font-size: 16px; font-weight: 700; }
+.header p { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+
+.main { max-width: 480px; margin: 0 auto; padding: 16px; }
+
+.card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #e2e8f0; }
+.card-hd { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: #6b7280; margin-bottom: 10px; }
+
+.info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+.info-row:last-child { border-bottom: none; }
+.info-label { color: #6b7280; }
+.info-val { font-weight: 600; }
+
+.ore-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+.ore-row:last-child { border-bottom: none; }
+.ore-tot { display: flex; justify-content: space-between; padding: 10px 0; font-size: 15px; font-weight: 700; }
+
+/* Canvas firma */
+.firma-wrap { position: relative; margin-bottom: 12px; }
+#canvas-firma { border: 2px dashed #e2e8f0; border-radius: 8px; width: 100%; touch-action: none; display: block; cursor: crosshair; background: #fafafa; }
+.firma-hint { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 6px; }
+.btn-clear { background: none; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer; color: #6b7280; display: block; margin: 8px auto 0; }
+
+.btn-valida { width: 100%; padding: 16px; border: none; border-radius: 12px; background: #1a3a5c; color: white; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+.btn-valida:disabled { opacity: 0.4; cursor: default; }
+
+/* Stati */
+.stato-attesa { text-align: center; padding: 40px 20px; }
+.stato-attesa svg { width: 48px; height: 48px; margin: 0 auto 12px; display: block; }
+.stato-validato { text-align: center; padding: 40px 20px; }
+.stato-validato .check { width: 64px; height: 64px; background: #d1fae5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px; }
+.stato-errore { text-align: center; padding: 40px 20px; color: #b52b2b; }
+
+#loading { text-align: center; padding: 60px 20px; color: #6b7280; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Il Filo di Arianna</h1>
+  <p>Validazione foglio presenze</p>
+</div>
+
+<div class="main">
+  <div id="loading">Caricamento…</div>
+  <div id="content" style="display:none;"></div>
+</div>
+
+<script src="logo_b64.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyC1zB3CWrz3DFD2BwgYg0MlmPnOqid3aLY",
+  authDomain: "il-filo-di-arianna---presenze.firebaseapp.com",
+  projectId: "il-filo-di-arianna---presenze",
+  storageBucket: "il-filo-di-arianna---presenze.firebasestorage.app",
+  messagingSenderId: "528980391785",
+  appId: "1:528980391785:web:5be7fedf23fa55929aaff8"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let tokenData = null;
+let firmaCanvas = null;
+let firmaCtx = null;
+let disegnando = false;
+
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('t');
+  if (!token) { mostraErrore('Link non valido.'); return; }
+
+  try {
+    const doc = await db.collection('validazioni').doc(token).get();
+    if (!doc.exists) { mostraErrore('Foglio non trovato. Il link potrebbe essere scaduto.'); return; }
+    tokenData = { token, ...doc.data() };
+
+    if (tokenData.stato === 'validato') {
+      mostraGiaValidato();
+      return;
+    }
+
+    // Se è domiciliare, chiede prima la password coordinatore
+    if (tokenData.tipo === 'domiciliare') {
+      mostraLoginCoordinatore(token);
+      return;
+    }
+
+    // Carica timbrature e mostra foglio
+    await caricaEMostraFoglio(tokenData, token);
+  } catch(err) {
+    mostraErrore('Errore: ' + err.message);
+  }
+}
+
+async function caricaEMostraFoglio(tokenData, token) {
+  const snap = await db.collection('timbrature')
+    .where('educatoreId', '==', tokenData.educatoreId)
+    .where('mese', '==', tokenData.mese)
+    .get();
+  const timbrature = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(t => t.minore === tokenData.minore)
+    .sort((a, b) => a.data.localeCompare(b.data));
+  mostraFoglio(tokenData, timbrature, token);
+}
+
+function mostraLoginCoordinatore(token) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').innerHTML =
+    '<div class="card">' +
+      '<div class="card-hd">Validazione coordinatore</div>' +
+      '<p style="font-size:13px;color:#6b7280;margin-bottom:16px;">Questo foglio richiede la validazione del coordinatore.<br>Inserisci la password della dashboard per procedere.</p>' +
+      '<input type="password" id="coord-pwd-input" placeholder="Password coordinatore" ' +
+        'style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;font-size:15px;margin-bottom:10px;">' +
+      '<div id="pwd-error" style="display:none;color:#b52b2b;font-size:13px;margin-bottom:8px;">Password non corretta.</div>' +
+      '<button onclick="verificaPasswordCoord(\'' + token + '\')" ' +
+        'style="width:100%;padding:14px;border:none;border-radius:10px;background:#1a3a5c;color:white;font-size:15px;font-weight:700;cursor:pointer;">Accedi</button>' +
+    '</div>';
+  document.getElementById('content').style.display = 'block';
+  setTimeout(function(){ document.getElementById('coord-pwd-input').focus(); }, 100);
+}
+
+async function verificaPasswordCoord(token) {
+  const pwd = document.getElementById('coord-pwd-input').value;
+  const snap = await db.collection('config').doc('coordinatore').get();
+  const pwd_corretta = snap.exists ? snap.data().password : 'filo2024';
+  if (pwd !== pwd_corretta) {
+    document.getElementById('pwd-error').style.display = 'block';
+    return;
+  }
+  document.getElementById('content').innerHTML = '<p style="text-align:center;padding:20px;color:#6b7280;">Caricamento…</p>';
+  await caricaEMostraFoglio(tokenData, token);
+}
+
+function calcolaOre(entrata, uscita) {
+  if (!entrata || !uscita) return null;
+  const [he, me] = entrata.split(':').map(Number);
+  const [hu, mu] = uscita.split(':').map(Number);
+  const diff = (hu * 60 + mu) - (he * 60 + me);
+  return diff > 0 ? (diff / 60) : null;
+}
+
+function formatData(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return d + '/' + m + '/' + y;
+}
+
+function mostraFoglio(dati, timbrature, token) {
+  const totOre = timbrature.reduce((s, t) => s + (calcolaOre(t.entrata, t.uscita) || 0), 0);
+
+  const righeTimb = timbrature.map(t => {
+    const ore = calcolaOre(t.entrata, t.uscita);
+    return '<div class="ore-row">' +
+      '<span>' + formatData(t.data) + '</span>' +
+      '<span>' + (t.entrata || '--') + ' → ' + (t.uscita || '…') + '</span>' +
+      '<span style="font-weight:600;">' + (ore ? ore.toFixed(2) + 'h' : '—') + '</span>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('content').innerHTML =
+    '<div class="card">' +
+      '<div class="card-hd">Foglio presenze</div>' +
+      '<div class="info-row"><span class="info-label">Minore</span><span class="info-val">' + dati.minore + '</span></div>' +
+      '<div class="info-row"><span class="info-label">Scuola</span><span class="info-val">' + dati.scuola + '</span></div>' +
+      '<div class="info-row"><span class="info-label">Educatore</span><span class="info-val">' + dati.educatoreNome + '</span></div>' +
+      '<div class="info-row"><span class="info-label">Mese</span><span class="info-val">' + dati.nomeMese + ' ' + dati.anno + '</span></div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<div class="card-hd">Riepilogo interventi</div>' +
+      righeTimb +
+      '<div class="ore-tot"><span>Totale ore</span><span>' + totOre.toFixed(2) + 'h</span></div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<div class="card-hd">Firma del referente</div>' +
+      '<div class="firma-wrap">' +
+        '<canvas id="canvas-firma" height="160"></canvas>' +
+        '<button class="btn-clear" onclick="pulisciFirma()">Cancella firma</button>' +
+      '</div>' +
+      '<p class="firma-hint">Firma nell\'area sopra con il dito</p>' +
+      '<button class="btn-valida" id="btn-valida" onclick="inviaValidazione(\'' + token + '\')" disabled>Firma e valida</button>' +
+    '</div>';
+
+  document.getElementById('content').style.display = 'block';
+  document.getElementById('loading').style.display = 'none';
+
+  // Inizializza canvas firma
+  setTimeout(inizializzaCanvas, 100);
+}
+
+function inizializzaCanvas() {
+  firmaCanvas = document.getElementById('canvas-firma');
+  if (!firmaCanvas) return;
+  firmaCanvas.width = firmaCanvas.offsetWidth;
+  firmaCtx = firmaCanvas.getContext('2d');
+  firmaCtx.strokeStyle = '#1a3a5c';
+  firmaCtx.lineWidth = 2.5;
+  firmaCtx.lineCap = 'round';
+  firmaCtx.lineJoin = 'round';
+
+  // Touch events
+  firmaCanvas.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    disegnando = true;
+    const t = e.touches[0];
+    const r = firmaCanvas.getBoundingClientRect();
+    firmaCtx.beginPath();
+    firmaCtx.moveTo(t.clientX - r.left, t.clientY - r.top);
+  }, { passive: false });
+
+  firmaCanvas.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    if (!disegnando) return;
+    const t = e.touches[0];
+    const r = firmaCanvas.getBoundingClientRect();
+    firmaCtx.lineTo(t.clientX - r.left, t.clientY - r.top);
+    firmaCtx.stroke();
+    document.getElementById('btn-valida').disabled = false;
+  }, { passive: false });
+
+  firmaCanvas.addEventListener('touchend', function() { disegnando = false; });
+
+  // Mouse events (per test su PC)
+  firmaCanvas.addEventListener('mousedown', function(e) {
+    disegnando = true;
+    const r = firmaCanvas.getBoundingClientRect();
+    firmaCtx.beginPath();
+    firmaCtx.moveTo(e.clientX - r.left, e.clientY - r.top);
+  });
+  firmaCanvas.addEventListener('mousemove', function(e) {
+    if (!disegnando) return;
+    const r = firmaCanvas.getBoundingClientRect();
+    firmaCtx.lineTo(e.clientX - r.left, e.clientY - r.top);
+    firmaCtx.stroke();
+    document.getElementById('btn-valida').disabled = false;
+  });
+  firmaCanvas.addEventListener('mouseup', function() { disegnando = false; });
+}
+
+function pulisciFirma() {
+  if (!firmaCanvas || !firmaCtx) return;
+  firmaCtx.clearRect(0, 0, firmaCanvas.width, firmaCanvas.height);
+  document.getElementById('btn-valida').disabled = true;
+}
+
+async function inviaValidazione(token) {
+  const btn = document.getElementById('btn-valida');
+  btn.disabled = true;
+  btn.textContent = 'Salvataggio…';
+
+  // Cattura firma come immagine base64
+  const firmaBase64 = firmaCanvas.toDataURL('image/png');
+
+  try {
+    await db.collection('validazioni').doc(token).update({
+      stato: 'validato',
+      firma: firmaBase64,
+      validatoAt: firebase.firestore.FieldValue.serverTimestamp(),
+      referenteInfo: navigator.userAgent.slice(0, 100)
+    });
+    mostraValidato();
+  } catch(err) {
+    btn.disabled = false;
+    btn.textContent = 'Firma e valida';
+    alert('Errore: ' + err.message);
+  }
+}
+
+function mostraValidato() {
+  document.getElementById('content').innerHTML =
+    '<div class="stato-validato">' +
+      '<div class="check">✓</div>' +
+      '<h2 style="font-size:20px;font-weight:700;color:#065f46;margin-bottom:8px;">Foglio validato</h2>' +
+      '<p style="font-size:14px;color:#6b7280;line-height:1.6;">La firma è stata registrata correttamente.<br>Il coordinatore riceverà la conferma.</p>' +
+    '</div>';
+}
+
+function mostraGiaValidato() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').innerHTML =
+    '<div class="stato-validato">' +
+      '<div class="check">✓</div>' +
+      '<h2 style="font-size:18px;font-weight:700;color:#065f46;margin-bottom:8px;">Già validato</h2>' +
+      '<p style="font-size:14px;color:#6b7280;">Questo foglio presenze è già stato firmato.</p>' +
+    '</div>';
+  document.getElementById('content').style.display = 'block';
+}
+
+function mostraErrore(msg) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').innerHTML =
+    '<div class="stato-errore">' +
+      '<p style="font-size:16px;font-weight:700;margin-bottom:8px;">Errore</p>' +
+      '<p style="font-size:14px;">' + msg + '</p>' +
+    '</div>';
+  document.getElementById('content').style.display = 'block';
+}
+
+init();
+</script>
+</body>
+</html>
