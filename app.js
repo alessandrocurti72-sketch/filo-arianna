@@ -349,7 +349,7 @@ function renderInterventi() {
   c.innerHTML = interventi.map(i => {
     const aperto = activeTimbr && activeTimbr.interventoId === i.id && !activeTimbr.uscita;
     const sel = selectedIntervento && selectedIntervento.id === i.id;
-    const isServizio = i.tipo === 'micronido' || i.tipo === 'doposcuola';
+    const isServizio = i.tipo === 'micronido' || i.tipo === 'doposcuola' || i.tipo === 'centro_estivo';
     const avBg = i.tipo === 'micronido' ? '#7b1fa2' : i.tipo === 'doposcuola' ? '#c47a2e' : '#1a3a5c';
     const subLabel = isServizio
       ? (i.scuola ? i.scuola : (i.tipo === 'micronido' ? 'Servizio Micronido' : 'Servizio Doposcuola'))
@@ -406,20 +406,20 @@ function resetPanel() {
 }
 
 function aggiornaFormIntervento(tipo) {
-  const isServizio = tipo === 'micronido' || tipo === 'doposcuola';
+  const isServizio = tipo === 'micronido' || tipo === 'doposcuola' || tipo === 'centro_estivo';
   document.getElementById('form-minore-fields').style.display = isServizio ? 'none' : 'block';
   document.getElementById('form-servizio-fields').style.display = isServizio ? 'block' : 'none';
 }
 
 async function aggiungiIntervento() {
   const tipo = document.getElementById('new-tipo').value;
-  const isServizio = tipo === 'micronido' || tipo === 'doposcuola';
+  const isServizio = tipo === 'micronido' || tipo === 'doposcuola' || tipo === 'centro_estivo';
 
   let minore, scuola, comune;
 
   if (isServizio) {
     // Per micronido/doposcuola il "minore" è il nome del servizio
-    minore = tipo === 'micronido' ? 'Micronido' : 'Doposcuola';
+    minore = tipo === 'micronido' ? 'Micronido' : tipo === 'doposcuola' ? 'Doposcuola' : 'Centro Estivo';
     scuola = document.getElementById('new-sede').value.trim() || '';
     comune = '';
   } else {
@@ -825,7 +825,7 @@ async function esportaXlsx() {
 
 function creaFoglio(g, nomeMese, anno, mm, nomeEdu) {
   const giorniMese = new Date(parseInt(anno), mm, 0).getDate();
-  const isServizio = g.tipo === 'micronido' || g.tipo === 'doposcuola';
+  const isServizio = g.tipo === 'micronido' || g.tipo === 'doposcuola' || g.tipo === 'centro_estivo';
   const etichetta = isServizio ? 'SERVIZIO' : 'MINORE';
 
   const righe = [
@@ -908,7 +908,7 @@ async function esportaPDF() {
 
     // Genera un PDF per ogni minore/servizio
     Object.values(gruppi).forEach(function(g) {
-      const isServizio = g.tipo === 'micronido' || g.tipo === 'doposcuola';
+      const isServizio = g.tipo === 'micronido' || g.tipo === 'doposcuola' || g.tipo === 'centro_estivo';
       const isDomiciliare = g.tipo === 'domiciliare' || g.tipo === 'micronido' || g.tipo === 'doposcuola' || g.tipo === 'centro_estivo';
       const totOre = g.timb.reduce(function(s,t){ return s+(calcolaOre(t.entrata,t.uscita)||0); }, 0);
       const righe = g.timb
