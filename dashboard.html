@@ -606,9 +606,9 @@ function _getDb() {
   if (_db) return _db;
   if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
   _db = firebase.firestore();
-  _db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
   return _db;
 }
+
 
 const col = name => _getDb().collection(name);
 
@@ -937,7 +937,7 @@ function logoutCoord() {
 function aggiornaMeseCombo() {
   const anno = document.getElementById('f-anno').value;
   const mese = document.getElementById('f-mese-num').value;
-  if (anno && mese) {
+  if (anno && mese && !window._initDashInProgress) {
     document.getElementById('f-mese').value = anno + '-' + mese;
     aggiornaDash();
   }
@@ -948,6 +948,7 @@ async function initDash() {
   const annoN = oggi.getFullYear();
   const meseN = oggi.getMonth() + 1;
 
+  window._initDashInProgress = true;
   // Popola select anno (3 anni)
   const annoSel = document.getElementById('f-anno');
   annoSel.innerHTML = '';
@@ -966,8 +967,10 @@ async function initDash() {
   // Imposta il valore nascosto
   document.getElementById('f-mese').value = annoN + '-' + String(meseN).padStart(2,'0');
 
+  window._initDashInProgress = false;
   await popolaFiltri();
   await aggiornaDash();
+  await aggiornaOreAgg();
 }
 
 async function popolaFiltri() {
@@ -1055,8 +1058,6 @@ async function aggiornaDash() {
 
   // Aggiorna sezione validazioni
   await aggiornaValidazioni();
-  // Aggiorna ore aggiuntive e richieste
-  await aggiornaOreAgg();
   await aggiornaRichieste();
 }
 
