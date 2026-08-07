@@ -139,6 +139,7 @@ td { padding: 10px 14px; vertical-align: middle; }
       <button class="btn btn-acc btn-sm" onclick="esportaRiepilogoMensile()" style="background:#1a7040;">↓ Riepilogo mensile</button>
       <button class="btn btn-acc btn-sm" onclick="scaricaTuttiPDF()" style="background:#7b3f00;">↓ PDF validati</button>
       <button class="btn btn-sec btn-sm" onclick="openGestione()">👥 Gestione educatori</button>
+      <button class="btn btn-sec btn-sm" onclick="openAgenda()">📅 Agenda</button>
       <button class="btn btn-sec btn-sm" onclick="openOrari()">⏱ Orari settimanali</button>
       <button class="btn btn-sec btn-sm" onclick="openArchivio()">📦 Archivio</button>
       <button class="btn btn-sec btn-sm" onclick="logoutCoord()">Esci</button>
@@ -293,14 +294,28 @@ td { padding: 10px 14px; vertical-align: middle; }
       <div style="display:flex;flex-direction:column;gap:8px;">
         <input type="text" id="new-edu-nome-coord" placeholder="Nome completo (es. Mario Rossi)"
           style="padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit;">
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input type="text" id="new-edu-pin-coord" placeholder="PIN 4 cifre" maxlength="4" inputmode="numeric"
-            style="flex:1;padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit;letter-spacing:4px;text-align:center;">
-          <button onclick="creaEducatoreCoord()"
-            style="flex:2;padding:9px 14px;border:none;border-radius:6px;background:#1a3a5c;color:#fff;cursor:pointer;font-size:13px;font-weight:700;">
-            Crea profilo
-          </button>
-        </div>
+        <input type="text" id="new-edu-pin-coord" placeholder="PIN 4 cifre" maxlength="4" inputmode="numeric"
+          style="padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit;letter-spacing:4px;text-align:center;">
+        <select id="new-edu-ruolo-coord" style="padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit;">
+          <option value="educatore">Educatore</option>
+          <option value="coordinatore_area">Coordinatore area</option>
+          <option value="coordinatore_pedagogico">Coordinatore pedagogico</option>
+          <option value="operatore_micronido">Operatore micronido</option>
+          <option value="cuoco">Cuoco/a</option>
+          <option value="altro">Altro</option>
+        </select>
+        <select id="new-edu-area-coord" style="padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit;">
+          <option value="">— Nessuna area specifica —</option>
+          <option value="scolastico">Scolastico</option>
+          <option value="domiciliare">Domiciliare</option>
+          <option value="micronido">Micronido</option>
+          <option value="doposcuola">Doposcuola</option>
+          <option value="centro_estivo">Centro Estivo</option>
+        </select>
+        <button onclick="creaEducatoreCoord()"
+          style="padding:9px 14px;border:none;border-radius:6px;background:#1a3a5c;color:#fff;cursor:pointer;font-size:13px;font-weight:700;">
+          Crea profilo
+        </button>
       </div>
     </div>
 
@@ -313,8 +328,15 @@ td { padding: 10px 14px; vertical-align: middle; }
         + Nuovo intervento per <span id="int-edu-nome"></span>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;">
-        <input type="text" id="int-minore" placeholder="Nome minore (es. Luca B.)"
+        <input type="text" id="int-minore" placeholder="Nome minore o servizio (es. Luca B.)"
           style="padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit;">
+        <select id="int-tipo" style="padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit;">
+          <option value="scolastico">Scolastico (QR code)</option>
+          <option value="domiciliare">Domiciliare (invia al coordinatore)</option>
+          <option value="micronido">Micronido (invia al coordinatore)</option>
+          <option value="doposcuola">Doposcuola (invia al coordinatore)</option>
+          <option value="centro_estivo">Centro Estivo (invia al coordinatore)</option>
+        </select>
         <input type="text" id="int-scuola" placeholder="Scuola / sede (es. ITIS Galilei)"
           style="padding:9px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit;">
         <input type="text" id="int-comune" placeholder="Comune (es. Varese)"
@@ -471,11 +493,13 @@ async function aggiornaListaGestione() {
 async function creaEducatoreCoord() {
   const nome = document.getElementById('new-edu-nome-coord').value.trim();
   const pin = document.getElementById('new-edu-pin-coord').value.trim();
+  const ruolo = document.getElementById('new-edu-ruolo-coord').value;
+  const area = document.getElementById('new-edu-area-coord').value;
   if (!nome) { alert('Inserisci il nome dell\'educatore'); return; }
   if (pin.length !== 4 || isNaN(Number(pin))) { alert('Il PIN deve essere di 4 cifre numeriche'); return; }
   try {
     await _getDb().collection('educatori').add({
-      nome, pin,
+      nome, pin, ruolo, area,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       createdBy: 'coordinatore'
     });
@@ -495,6 +519,7 @@ function apriFormIntervento(eduId, eduNome) {
   document.getElementById('int-minore').value = '';
   document.getElementById('int-scuola').value = '';
   document.getElementById('int-comune').value = '';
+  document.getElementById('int-tipo').value = 'scolastico';
   document.getElementById('form-aggiungi-intervento').style.display = 'block';
   document.getElementById('modal-reset-pin').style.display = 'none';
   document.getElementById('int-minore').focus();
@@ -510,11 +535,12 @@ async function salvaIntervento() {
   const minore = document.getElementById('int-minore').value.trim();
   const scuola = document.getElementById('int-scuola').value.trim();
   const comune = document.getElementById('int-comune').value.trim();
-  if (!minore || !scuola) { alert('Inserisci almeno il nome del minore e la scuola'); return; }
+  const tipo = document.getElementById('int-tipo').value;
+  if (!minore || !scuola) { alert('Inserisci almeno il nome del minore e la scuola/sede'); return; }
   try {
     await _getDb().collection('interventi').add({
       educatoreId: interventoEduId,
-      minore, scuola, comune,
+      minore, scuola, comune, tipo,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       createdBy: 'coordinatore'
     });
@@ -2281,6 +2307,191 @@ async function esportaRiepilogoMensile() {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw-dashboard.js').catch(() => {});
 }
+
+// ── AGENDA SETTIMANALE ──────────────────────────────────────────
+
+const PALETTE_AGE_MINORI = [
+  "FFB3B3","FFDDB3","FFF0B3","B3FFB3","B3EEFF","C4B3FF","FFB3E8",
+  "FF9999","FFCC99","FFE699","99FF99","99DDFF","AA99FF","FF99D6",
+  "FFD6D6","FFE8CC","FFF5CC","D6FFD6","CCF5FF","D6CCFF","FFD6F0",
+];
+const PALETTE_AGE_SERVIZI = [
+  "A8D8A8","A8C8E8","E8A8D8","D8C8A8","A8E8D8","E8D8A8","C8A8E8",
+  "B8E8B8","B8D8F8","F8B8E8","E8D8B8","B8F8E8","F8E8B8","D8B8F8",
+];
+
+function isServizioAg(nome) {
+  const n = (nome||'').toUpperCase();
+  return n.includes('DOPOSCUOLA') || n.includes('NIDO') || n.includes('CENTRO ESTIVO') || n.includes('CFP');
+}
+
+function buildColorMapAg(slots) {
+  const mapM = {}, mapS = {};
+  let iM = 0, iS = 0;
+  slots.forEach(s => {
+    const k = (s.minore||'').toUpperCase();
+    if (!k) return;
+    if (isServizioAg(k)) { if (!mapS[k]) mapS[k] = PALETTE_AGE_SERVIZI[iS++ % PALETTE_AGE_SERVIZI.length]; }
+    else { if (!mapM[k]) mapM[k] = PALETTE_AGE_MINORI[iM++ % PALETTE_AGE_MINORI.length]; }
+  });
+  return { ...mapM, ...mapS };
+}
+
+async function openAgenda() {
+  let modal = document.getElementById('modal-agenda');
+  if (modal) modal.remove();
+  modal = document.createElement('div');
+  modal.id = 'modal-agenda';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px;';
+  modal.innerHTML = '<div style="background:#fff;border-radius:12px;width:98%;max-width:1400px;min-height:400px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:2px solid #1a3a5c;background:#1a3a5c;border-radius:12px 12px 0 0;">' +
+      '<div>' +
+        '<h2 style="font-size:17px;font-weight:700;color:white;margin:0;">📅 Agenda Settimanale Educatori</h2>' +
+        '<p style="font-size:11px;color:#aac4e0;margin:2px 0 0;">A.S. 2026-2027 — BOZZA</p>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;align-items:center;">' +
+        '<select id="ag-edu-filter" onchange="renderAgenda()" style="padding:6px 10px;border-radius:6px;border:1px solid #aaa;font-size:12px;">' +
+          '<option value="">Tutti gli educatori</option>' +
+        '</select>' +
+        '<select id="ag-giorno-filter" onchange="renderAgenda()" style="padding:6px 10px;border-radius:6px;border:1px solid #aaa;font-size:12px;">' +
+          '<option value="">Tutti i giorni</option>' +
+          '<option value="lunedi">Lunedì</option>' +
+          '<option value="martedi">Martedì</option>' +
+          '<option value="mercoledi">Mercoledì</option>' +
+          '<option value="giovedi">Giovedì</option>' +
+          '<option value="venerdi">Venerdì</option>' +
+        '</select>' +
+        '<button onclick="document.getElementById(\'modal-agenda\').remove()" style="background:rgba(255,255,255,.2);border:none;border-radius:6px;padding:6px 12px;color:white;cursor:pointer;font-size:20px;">×</button>' +
+      '</div>' +
+    '</div>' +
+    '<div id="ag-content" style="padding:16px;overflow-x:auto;">Caricamento…</div>' +
+  '</div>';
+  document.body.appendChild(modal);
+
+  // Carica dati
+  window._agendaSlots = null;
+  try {
+    const snap = await _getDb().collection('agenda_settimanale').get({ source: 'server' });
+    window._agendaSlots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Popola filtro educatori
+    const educatori = [...new Set(window._agendaSlots.map(s => s.educatoreNome))].sort();
+    const sel = document.getElementById('ag-edu-filter');
+    educatori.forEach(e => { sel.innerHTML += `<option value="${e}">${e}</option>`; });
+    renderAgenda();
+  } catch(e) {
+    document.getElementById('ag-content').innerHTML = '<p style="color:red;">Errore caricamento: ' + e.message + '</p>';
+  }
+}
+
+function renderAgenda() {
+  if (!window._agendaSlots) return;
+  const eduFilter = document.getElementById('ag-edu-filter').value;
+  const giornoFilter = document.getElementById('ag-giorno-filter').value;
+
+  const GIORNI = ['lunedi','martedi','mercoledi','giovedi','venerdi'];
+  const GIORNI_LABEL = ['LUNEDÌ','MARTEDÌ','MERCOLEDÌ','GIOVEDÌ','VENERDÌ'];
+  const ORA_INIZIO = 8 * 60, ORA_FINE = 20 * 60, STEP = 30;
+  const FASCE = [];
+  for (let m = ORA_INIZIO; m < ORA_FINE; m += STEP) FASCE.push(m);
+
+  function tMin(t) {
+    if (!t) return -1;
+    const [h,m] = t.split(':').map(Number);
+    return h*60+m;
+  }
+  function tLabel(m) { return `${String(m/60|0).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
+  function inFascia(im,fm,fMin) { return im < fMin+STEP && fm > fMin; }
+
+  // Filtra
+  let slots = window._agendaSlots;
+  if (eduFilter) slots = slots.filter(s => s.educatoreNome === eduFilter);
+  if (giornoFilter) slots = slots.filter(s => s.giorno === giornoFilter);
+
+  const educatori = [...new Set(slots.map(s => s.educatoreNome))].sort();
+  const giorni = giornoFilter ? [giornoFilter] : GIORNI;
+  const giorniLabel = giornoFilter ? [GIORNI_LABEL[GIORNI.indexOf(giornoFilter)]] : GIORNI_LABEL;
+
+  if (!educatori.length) {
+    document.getElementById('ag-content').innerHTML = '<p style="color:#6b7280;padding:20px;">Nessun dato per il filtro selezionato.</p>';
+    return;
+  }
+
+  // Costruisci tabella per ogni educatore
+  let html = '';
+  educatori.forEach(edu => {
+    const slotsEdu = slots.filter(s => s.educatoreNome === edu);
+    const colorMap = buildColorMapAg(slotsEdu);
+
+    html += `<div style="margin-bottom:24px;">`;
+    html += `<div style="font-size:13px;font-weight:700;color:#1a3a5c;background:#d6e4f0;padding:8px 12px;border-radius:6px 6px 0 0;border-bottom:2px solid #1a3a5c;">${edu}</div>`;
+    html += `<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;min-width:600px;">`;
+
+    // Intestazione giorni
+    html += `<thead><tr>`;
+    html += `<th style="width:52px;background:#1a3a5c;color:white;font-size:10px;padding:6px;text-align:center;border:1px solid #ccc;">ORA</th>`;
+    giorni.forEach((g,i) => {
+      html += `<th style="background:#2e6da4;color:white;font-size:11px;font-weight:700;padding:6px;text-align:center;border:1px solid #ccc;">${giorniLabel[i]}</th>`;
+    });
+    html += `</tr></thead><tbody>`;
+
+    // Righe orarie
+    FASCE.forEach(fascia => {
+      const isOra = fascia % 60 === 0;
+      const h = isOra ? '28px' : '18px';
+      html += `<tr style="height:${h};">`;
+      // Colonna ora
+      html += `<td style="font-size:9px;font-weight:${isOra?'700':'400'};color:#1a3a5c;text-align:center;padding:0 4px;background:${isOra?'#d6e4f0':'#eef4fb'};border:1px solid #ddd;white-space:nowrap;">${isOra ? tLabel(fascia) : ''}</td>`;
+
+      giorni.forEach(giorno => {
+        const slotAttivo = slotsEdu.find(s => {
+          if (s.giorno !== giorno) return false;
+          const im = tMin(s.inizio), fm = tMin(s.fine);
+          return inFascia(im, fm, fascia);
+        });
+
+        if (!slotAttivo) {
+          html += `<td style="background:white;border:1px solid #eee;"></td>`;
+        } else {
+          const im = tMin(slotAttivo.inizio);
+          const nome = slotAttivo.minore || '';
+          const luogo = slotAttivo.luogo || '';
+          const col = colorMap[(nome).toUpperCase()] || '#f5f5f5';
+          const isFasciaPrima = fascia === im || (fascia < im && im < fascia + STEP);
+
+          if (isFasciaPrima) {
+            // Prima fascia: mostra nome+orario e luogo
+            html += `<td style="background:${col};border:1px solid #bbb;padding:2px 4px;vertical-align:top;">`;
+            html += `<div style="font-size:10px;font-weight:700;color:#1a1a1a;line-height:1.3;">${slotAttivo.inizio}–${slotAttivo.fine} ${nome.toUpperCase()}</div>`;
+            if (luogo) html += `<div style="font-size:9px;color:#444;line-height:1.2;">${luogo.toLowerCase()}</div>`;
+            html += `</td>`;
+          } else {
+            // Fasce successive: solo colore
+            html += `<td style="background:${col};border-left:2px solid rgba(0,0,0,.1);border-right:2px solid rgba(0,0,0,.1);border-top:none;border-bottom:1px solid rgba(0,0,0,.05);"></td>`;
+          }
+        }
+      });
+
+      html += `</tr>`;
+    });
+
+    // Riga totale
+    html += `<tr>`;
+    html += `<td style="background:#1a3a5c;color:white;font-size:9px;font-weight:700;text-align:center;padding:4px;border:1px solid #ccc;">TOT</td>`;
+    giorni.forEach(giorno => {
+      const slotsG = slotsEdu.filter(s => s.giorno === giorno);
+      const totMin = slotsG.reduce((acc,s) => {
+        const d = tMin(s.fine) - tMin(s.inizio);
+        return acc + (d > 0 ? d : 0);
+      }, 0);
+      const label = totMin > 0 ? `${totMin/60|0}h${String(totMin%60).padStart(2,'0')}` : '—';
+      html += `<td style="background:#1a3a5c;color:white;font-size:10px;font-weight:700;text-align:center;padding:4px;border:1px solid #ccc;">${label}</td>`;
+    });
+    html += `</tr></tbody></table></div></div>`;
+  });
+
+  document.getElementById('ag-content').innerHTML = html;
+}
+
 </script>
 </body>
 </html>
